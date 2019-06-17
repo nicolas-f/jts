@@ -134,7 +134,11 @@ public class WKTWriter
     return "LINESTRING ( " + format(p0) + ", " + format(p1) + " )";
   }
 
-  public static String format(Coordinate p) {
+  public static String toCoordinate(Coordinate p) {
+    return format(p);
+  }
+  
+  private static String format(Coordinate p) {
     return format(p.x, p.y);
   }
   
