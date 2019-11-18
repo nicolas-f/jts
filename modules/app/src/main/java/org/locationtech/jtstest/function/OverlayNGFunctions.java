@@ -24,6 +24,7 @@ import org.locationtech.jts.geom.util.LineStringExtracter;
 import org.locationtech.jts.geom.util.PolygonExtracter;
 import org.locationtech.jts.operation.overlayng.CoverageUnion;
 import org.locationtech.jts.operation.overlayng.OverlayNG;
+import org.locationtech.jts.operation.overlayng.PolygonOverlay;
 import org.locationtech.jts.operation.overlayng.PrecisionReducer;
 import org.locationtech.jts.operation.overlayng.PrecisionUtil;
 import org.locationtech.jts.operation.overlayng.UnaryUnionNG;
@@ -105,6 +106,13 @@ public class OverlayNGFunctions {
   public static Geometry unionCoverage(Geometry geom) {
     Geometry cov = OverlayNGFunctions.extractHomo(geom);
     return CoverageUnion.union(cov);
+  }
+  
+  @Metadata(description="Overlay a set of polygons")
+  public static Geometry overlayPolygons(Geometry geom,
+      @Metadata(title="Grid Scale") double scaleFactor) {
+    return PolygonOverlay.overlay( geom,
+        new PrecisionModel(scaleFactor));
   }
   
   @Metadata(description="Reduce precision of a geometry")
