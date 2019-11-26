@@ -397,9 +397,12 @@ class OffsetSegmentGenerator
   }
 
   /**
-   * Add an end cap around point p1, terminating a line segment coming from p0
+   * Add an end cap around point p1, terminating a line segment coming from p0.
+   * The caps for the start and end line points can be different.
+   * 
+   * @param isLineEnd true if p1 is the end point of the line, false if it is the start point
    */
-  public void addLineEndCap(Coordinate p0, Coordinate p1)
+  public void addLineEndCap(Coordinate p0, Coordinate p1, boolean isLineEnd)
   {
     LineSegment seg = new LineSegment(p0, p1);
 
@@ -412,7 +415,8 @@ class OffsetSegmentGenerator
     double dy = p1.y - p0.y;
     double angle = Math.atan2(dy, dx);
 
-    switch (bufParams.getEndCapStyle()) {
+    int capStyle = isLineEnd ? bufParams.getEndCapStyle() : bufParams.getStartCapStyle();
+    switch (capStyle) {
       case BufferParameters.CAP_ROUND:
         // add offset seg points with a fillet between them
         segList.addPt(offsetL.p1);
@@ -439,7 +443,20 @@ class OffsetSegmentGenerator
         segList.addPt(squareCapLOffset);
         segList.addPt(squareCapROffset);
         break;
+      case BufferParameters.CAP_POINT:
+        // add a square defined by extensions of the offset segment endpoints
+        Coordinate pointOffset = new Coordinate();
+        pointOffset.x = Math.abs(distance) * Math.cos(angle);
+        pointOffset.y = Math.abs(distance) * Math.sin(angle);
 
+        Coordinate pointTip = new Coordinate(
+            p1.x + pointOffset.x,
+            p1.y + pointOffset.y);
+        
+        segList.addPt(offsetL.p1);
+        segList.addPt(pointTip);
+        segList.addPt(offsetR.p1);
+        break;
     }
   }
   /**
@@ -637,6 +654,19 @@ class OffsetSegmentGenerator
     segList.addPt(new Coordinate(p.x + distance, p.y - distance));
     segList.addPt(new Coordinate(p.x - distance, p.y - distance));
     segList.addPt(new Coordinate(p.x - distance, p.y + distance));
+    segList.closeRing();
+  }
+  
+  /**
+   * Creates a CW diamond around a point,
+   * used for buffers of points with cap style POINT
+   */
+  public void createDiamond(Coordinate p)
+  {
+    segList.addPt(new Coordinate(p.x + distance, p.y));
+    segList.addPt(new Coordinate(p.x, p.y - distance));
+    segList.addPt(new Coordinate(p.x - distance, p.y));
+    segList.addPt(new Coordinate(p.x, p.y + distance));
     segList.closeRing();
   }
 }

@@ -170,6 +170,9 @@ public class OffsetCurveBuilder
       case BufferParameters.CAP_SQUARE:
         segGen.createSquare(pt);
         break;
+      case BufferParameters.CAP_POINT:
+        segGen.createDiamond(pt);
+        break;
       // otherwise curve is empty (e.g. for a butt cap);
     }
   }
@@ -191,7 +194,7 @@ public class OffsetCurveBuilder
     }
     segGen.addLastSegment();
     // add line cap for end of line
-    segGen.addLineEndCap(simp1[n1 - 1], simp1[n1]);
+    segGen.addLineEndCap(simp1[n1 - 1], simp1[n1], true);
     
     //---------- compute points for right side of line
     // Simplify the appropriate side of the line before generating
@@ -207,7 +210,7 @@ public class OffsetCurveBuilder
     }
     segGen.addLastSegment();
     // add line cap for start of line
-    segGen.addLineEndCap(simp2[1], simp2[0]);
+    segGen.addLineEndCap(simp2[1], simp2[0], false);
 
     segGen.closeRing();
   }

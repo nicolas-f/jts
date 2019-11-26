@@ -59,13 +59,14 @@ extends JPanel implements FunctionPanel
 {
   private static final EmptyBorder LABEL_BORDER = new EmptyBorder(3,5,3,5);
 
-  private static final String[] PARAM_DEFAULT = { "10", "0", "0", "0", "0" };
+  private static final String[] PARAM_DEFAULT = { "10", "0", "0", "0", "5" };
   
-  private static String[] capStyleItems = new String[] { "Round", "Flat", "Square" };
+  private static String[] capStyleItems = new String[] { "Round", "Flat", "Square", "Point" };
   private static Object[] capStyleValues = new Object[] { 
   		BufferParameters.CAP_ROUND,
   		BufferParameters.CAP_FLAT,
-  		BufferParameters.CAP_SQUARE
+      BufferParameters.CAP_SQUARE,
+      BufferParameters.CAP_POINT
   		};
   private static String[] joinStyleItems = new String[] { "Round", "Mitre", "Bevel" };
   private static Object[] joinStyleValues = new Object[] { 

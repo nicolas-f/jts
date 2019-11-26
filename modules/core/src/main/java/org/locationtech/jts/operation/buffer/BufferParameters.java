@@ -41,6 +41,10 @@ public class BufferParameters
    * Specifies a square line buffer end cap style.
    */
   public static final int CAP_SQUARE = 3;
+  /**
+   * Specifies a pointed line buffer end cap style.
+   */
+  public static final int CAP_POINT = 4;
   
   /**
    * Specifies a round join style.
@@ -78,6 +82,7 @@ public class BufferParameters
 
   private int quadrantSegments = DEFAULT_QUADRANT_SEGMENTS;
   private int endCapStyle = CAP_ROUND;
+  private int startCapStyle = -1;
   private int joinStyle = JOIN_ROUND;
   private double mitreLimit = DEFAULT_MITRE_LIMIT;
   private boolean isSingleSided = false;
@@ -237,6 +242,24 @@ public class BufferParameters
     this.endCapStyle = endCapStyle;
   }
   
+  public int getStartCapStyle() {
+    if (startCapStyle < 0)
+      return endCapStyle;
+    return startCapStyle;
+  }
+  
+  /**
+   * Specifies the start cap style of the generated buffer.
+   * The styles supported are {@link #CAP_ROUND}, {@link #CAP_FLAT}, and {@link #CAP_SQUARE}.
+   * The default is to be the same as the end cap style.
+   *
+   * @param startCapStyle the cap style
+   */
+  public void setStartCapStyle(int startCapStyle)
+  {
+    this.startCapStyle = startCapStyle;
+  }
+  
   /**
    * Gets the join style
    * 
@@ -342,4 +365,5 @@ public class BufferParameters
   {
     this.simplifyFactor = simplifyFactor < 0 ? 0 : simplifyFactor;
   }
+
 }
