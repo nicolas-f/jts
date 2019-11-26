@@ -411,28 +411,35 @@ class OffsetSegmentGenerator
     LineSegment offsetR = new LineSegment();
     computeOffsetSegment(seg, Position.RIGHT, distance, offsetR);
 
+    double factor = isLineEnd ? bufParams.getEndCapFactor() : bufParams.getStartCapFactor();
+    double factorDist = Math.abs(distance) * factor;
+    
     double dx = p1.x - p0.x;
     double dy = p1.y - p0.y;
     double angle = Math.atan2(dy, dx);
-
+    
     int capStyle = isLineEnd ? bufParams.getEndCapStyle() : bufParams.getStartCapStyle();
     switch (capStyle) {
       case BufferParameters.CAP_ROUND:
         // add offset seg points with a fillet between them
         segList.addPt(offsetL.p1);
+        // TODO: support factorDist for curve
         addDirectedFillet(p1, angle + Math.PI / 2, angle - Math.PI / 2, Orientation.CLOCKWISE, distance);
         segList.addPt(offsetR.p1);
         break;
       case BufferParameters.CAP_FLAT:
         // only offset segment points are added
+        // distance factor is not used
         segList.addPt(offsetL.p1);
         segList.addPt(offsetR.p1);
         break;
       case BufferParameters.CAP_SQUARE:
+        // negative distances are clamped to 0
+        double squareDist = factorDist > 0 ? factorDist : 0;
         // add a square defined by extensions of the offset segment endpoints
         Coordinate squareCapSideOffset = new Coordinate();
-        squareCapSideOffset.x = Math.abs(distance) * Math.cos(angle);
-        squareCapSideOffset.y = Math.abs(distance) * Math.sin(angle);
+        squareCapSideOffset.x = Math.abs(squareDist) * Math.cos(angle);
+        squareCapSideOffset.y = Math.abs(squareDist) * Math.sin(angle);
 
         Coordinate squareCapLOffset = new Coordinate(
             offsetL.p1.x + squareCapSideOffset.x,
@@ -444,14 +451,12 @@ class OffsetSegmentGenerator
         segList.addPt(squareCapROffset);
         break;
       case BufferParameters.CAP_POINT:
-        // add a square defined by extensions of the offset segment endpoints
-        Coordinate pointOffset = new Coordinate();
-        pointOffset.x = Math.abs(distance) * Math.cos(angle);
-        pointOffset.y = Math.abs(distance) * Math.sin(angle);
+        double pointX = factorDist * Math.cos(angle);
+        double pointY = factorDist * Math.sin(angle);
 
         Coordinate pointTip = new Coordinate(
-            p1.x + pointOffset.x,
-            p1.y + pointOffset.y);
+            p1.x + pointX,
+            p1.y + pointY);
         
         segList.addPt(offsetL.p1);
         segList.addPt(pointTip);

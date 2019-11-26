@@ -59,7 +59,7 @@ extends JPanel implements FunctionPanel
 {
   private static final EmptyBorder LABEL_BORDER = new EmptyBorder(3,5,3,5);
 
-  private static final String[] PARAM_DEFAULT = { "10", "0", "0", "0", "0", "5" };
+  private static final String[] PARAM_DEFAULT = { "10", "0", "1", "0", "1", "0", "0", "5" };
   
   private static String[] capStyleItems = new String[] { "Round", "Flat", "Square", "Point" };
   private static Object[] capStyleValues = new Object[] { 
@@ -129,12 +129,12 @@ extends JPanel implements FunctionPanel
   private JTextField txtMitreLimit = new JTextField();
 
   private JComponent[] paramComp = { txtDistance, txtQuadrantSegs, 
-      cbCapStyle, // txtEndCapFactor,
-      cbStartCapStyle, // txtStartCapFactor,
+      cbCapStyle,  txtEndCapFactor,
+      cbStartCapStyle, txtStartCapFactor,
       cbJoinStyle, txtMitreLimit };
   private JLabel[] paramLabel = { lblDistance, lblQuadSegs, 
-      lblCapStyle, // lblEndCapFactor, 
-      lblStartCapStyle, // lblStartCapFactor,
+      lblCapStyle, lblEndCapFactor, 
+      lblStartCapStyle, lblStartCapFactor,
       lblJoinStyle, lblMitreLimit };
   
   private GeometryFunction currentFunc = null;
@@ -239,17 +239,17 @@ extends JPanel implements FunctionPanel
     
     panelBufParam.add(lblCapStyle);
     panelBufParam.add(cbCapStyle);
-    //panelBufParam.add(lblEndCapFactor);
-    //panelBufParam.add(txtEndCapFactor);
-    panelBufParam.add(new JLabel());
-    panelBufParam.add(new JLabel());
+    panelBufParam.add(lblEndCapFactor);
+    panelBufParam.add(txtEndCapFactor);
+    //panelBufParam.add(new JLabel());
+    //panelBufParam.add(new JLabel());
 
     panelBufParam.add(lblStartCapStyle);
     panelBufParam.add(cbStartCapStyle);
-    //panelBufParam.add(lblStartCapFactor);
-    //panelBufParam.add(txtStartCapFactor);
-    panelBufParam.add(new JLabel());
-    panelBufParam.add(new JLabel());
+    panelBufParam.add(lblStartCapFactor);
+    panelBufParam.add(txtStartCapFactor);
+    //panelBufParam.add(new JLabel());
+    //panelBufParam.add(new JLabel());
 
     
     panelBufParam.add(lblJoinStyle);
@@ -525,9 +525,11 @@ extends JPanel implements FunctionPanel
     case 0: return valOrDefault(SwingUtil.value(txtDistance), PARAM_DEFAULT[0]);
     case 1: return valOrDefault(SwingUtil.value(txtQuadrantSegs), PARAM_DEFAULT[1]);
     case 2: return SwingUtil.value(cbCapStyle, capStyleValues);
-    case 3: return SwingUtil.value(cbStartCapStyle, capStyleValues);
-    case 4: return SwingUtil.value(cbJoinStyle, joinStyleValues);
-    case 5: return valOrDefault(SwingUtil.value(txtMitreLimit), PARAM_DEFAULT[4]);
+    case 3: return valOrDefault(SwingUtil.value(txtEndCapFactor), PARAM_DEFAULT[3]);
+    case 4: return SwingUtil.value(cbStartCapStyle, capStyleValues);
+    case 5: return valOrDefault(SwingUtil.value(txtStartCapFactor), PARAM_DEFAULT[5]);
+    case 6: return SwingUtil.value(cbJoinStyle, joinStyleValues);
+    case 7: return valOrDefault(SwingUtil.value(txtMitreLimit), PARAM_DEFAULT[4]);
     }
     return null;
   }

@@ -46,8 +46,12 @@ public class BufferFunctions {
 			Integer quadrantSegments, 
       @Metadata(title="End Cap")
       Integer capStyle, 
+      @Metadata(title="End Factor")
+      Double capFactor, 
       @Metadata(title="Start Cap")
       Integer capStyleStart, 
+      @Metadata(title="Start Factor")
+      Double capStartFactor, 
       @Metadata(title="Join")
 			Integer joinStyle, 
       @Metadata(title="Mitre limit")
@@ -59,7 +63,9 @@ public class BufferFunctions {
 	    BufferParameters bufParams = new BufferParameters();
 	    if (quadrantSegments != null)	bufParams.setQuadrantSegments(quadrantSegments.intValue());
       if (capStyle != null) bufParams.setEndCapStyle(capStyle.intValue());
+      if (capFactor != null) bufParams.setEndCapFactor(capFactor.doubleValue());
       if (capStyleStart != null) bufParams.setStartCapStyle(capStyleStart.intValue());
+      if (capStartFactor != null) bufParams.setStartCapFactor(capStartFactor.doubleValue());
 	    if (joinStyle != null) 	bufParams.setJoinStyle(joinStyle.intValue());
 	    if (mitreLimit != null) 	bufParams.setMitreLimit(mitreLimit.doubleValue());
 	    
@@ -88,7 +94,7 @@ public class BufferFunctions {
       Double distance,
       @Metadata(title="Quadrant Segs")
       Integer quadrantSegments, 
-      @Metadata(title="Cap style")
+      @Metadata(title="End Cap")
       Integer capStyle, 
       @Metadata(title="Start Cap")
       Integer capStyleStart, 

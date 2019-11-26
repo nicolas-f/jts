@@ -87,6 +87,8 @@ public class BufferParameters
   private double mitreLimit = DEFAULT_MITRE_LIMIT;
   private boolean isSingleSided = false;
   private double simplifyFactor = DEFAULT_SIMPLIFY_FACTOR;
+  private double endCapFactor = 1.0;
+  private double startCapFactor = 1.0;
   
   /**
    * Creates a default set of parameters
@@ -242,7 +244,36 @@ public class BufferParameters
     this.endCapStyle = endCapStyle;
   }
   
+  /**
+   * Gets the end cap factor.
+   * 
+   * @return the end cap factor
+   */
+  public double getEndCapFactor()
+  {
+    return endCapFactor;
+  }
+  
+  /**
+   * Specifies the factor determining the length of the end cap.
+   * The length of the cap is the buffer distance multiplied by the cap factor.
+   * Some cap styles may not be affected by the factor, 
+   * or may not support negative factors
+   *
+   * @param capFactor the cap factor to use
+   */
+  public void setEndCapFactor(double capFactor)
+  {
+    this.endCapFactor = capFactor;
+  }
+  
+  /**
+   * Gets the start cap style.
+   * 
+   * @return the start cap style
+   */
   public int getStartCapStyle() {
+    // start cap not set => return end cap style
     if (startCapStyle < 0)
       return endCapStyle;
     return startCapStyle;
@@ -251,13 +282,40 @@ public class BufferParameters
   /**
    * Specifies the start cap style of the generated buffer.
    * The styles supported are {@link #CAP_ROUND}, {@link #CAP_FLAT}, and {@link #CAP_SQUARE}.
-   * The default is to be the same as the end cap style.
+   * If not set, the default is for the start cap style 
+   * to be the same as the end cap style.
    *
-   * @param startCapStyle the cap style
+   * @param startCapStyle the start cap style
    */
   public void setStartCapStyle(int startCapStyle)
   {
     this.startCapStyle = startCapStyle;
+  }
+  
+  /**
+   * Gets the start cap factor.
+   * 
+   * @return the cap factor
+   */
+  public double getStartCapFactor()
+  {
+    // start cap style not set => return end cap factor
+    if (startCapStyle < 0)
+      return endCapFactor;
+    return startCapFactor;
+  }
+  
+  /**
+   * Specifies the factor determining the length of the start cap.
+   * The length of the cap is the buffer distance multiplied by the cap factor.
+   * Some cap styles may not be affected by the factor, 
+   * or may not support negative factors
+   *
+   * @param capFactor the cap factor to use
+   */
+  public void setStartCapFactor(double capFactor)
+  {
+    this.startCapFactor = capFactor;
   }
   
   /**
