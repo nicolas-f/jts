@@ -44,9 +44,11 @@ public class BufferFunctions {
 	    Double distance,
 	    @Metadata(title="Quadrant Segs")
 			Integer quadrantSegments, 
-      @Metadata(title="Cap style")
-			Integer capStyle, 
-      @Metadata(title="Join style")
+      @Metadata(title="End Cap")
+      Integer capStyle, 
+      @Metadata(title="Start Cap")
+      Integer capStyleStart, 
+      @Metadata(title="Join")
 			Integer joinStyle, 
       @Metadata(title="Mitre limit")
 			Double mitreLimit)	
@@ -56,7 +58,8 @@ public class BufferFunctions {
 	    
 	    BufferParameters bufParams = new BufferParameters();
 	    if (quadrantSegments != null)	bufParams.setQuadrantSegments(quadrantSegments.intValue());
-	    if (capStyle != null)	bufParams.setEndCapStyle(capStyle.intValue());
+      if (capStyle != null) bufParams.setEndCapStyle(capStyle.intValue());
+      if (capStyleStart != null) bufParams.setStartCapStyle(capStyleStart.intValue());
 	    if (joinStyle != null) 	bufParams.setJoinStyle(joinStyle.intValue());
 	    if (mitreLimit != null) 	bufParams.setMitreLimit(mitreLimit.doubleValue());
 	    
@@ -87,10 +90,12 @@ public class BufferFunctions {
       Integer quadrantSegments, 
       @Metadata(title="Cap style")
       Integer capStyle, 
-      @Metadata(title="Join style")
+      @Metadata(title="Start Cap")
+      Integer capStyleStart, 
+      @Metadata(title="Join")
       Integer joinStyle, 
       @Metadata(title="Mitre limit")
-      Double mitreLimit)  	
+      Double mitreLimit)  
 	{
     double dist = 0;
     if (distance != null) dist = distance.doubleValue();
@@ -98,6 +103,7 @@ public class BufferFunctions {
     BufferParameters bufParams = new BufferParameters();
     if (quadrantSegments != null)	bufParams.setQuadrantSegments(quadrantSegments.intValue());
     if (capStyle != null)	bufParams.setEndCapStyle(capStyle.intValue());
+    if (capStyleStart != null) bufParams.setStartCapStyle(capStyleStart.intValue());
     if (joinStyle != null) 	bufParams.setJoinStyle(joinStyle.intValue());
     if (mitreLimit != null) 	bufParams.setMitreLimit(mitreLimit.doubleValue());
     

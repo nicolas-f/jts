@@ -59,7 +59,7 @@ extends JPanel implements FunctionPanel
 {
   private static final EmptyBorder LABEL_BORDER = new EmptyBorder(3,5,3,5);
 
-  private static final String[] PARAM_DEFAULT = { "10", "0", "0", "0", "5" };
+  private static final String[] PARAM_DEFAULT = { "10", "0", "0", "0", "0", "5" };
   
   private static String[] capStyleItems = new String[] { "Round", "Flat", "Square", "Point" };
   private static Object[] capStyleValues = new Object[] { 
@@ -82,11 +82,7 @@ extends JPanel implements FunctionPanel
   GeometryFunctionTreePanel geomFuncPanel = new GeometryFunctionTreePanel();
   GridLayout gridLayout1 = new GridLayout();
   GridLayout gridLayout2 = new GridLayout();
-
-
-  BorderLayout borderLayout1 = new BorderLayout();
-  BorderLayout borderLayout2 = new BorderLayout();
-
+  
   JPanel panelParam = new JPanel();
   JPanel panelExec = new JPanel();
   JPanel panelExecMeta = new JPanel();
@@ -116,15 +112,30 @@ extends JPanel implements FunctionPanel
   private JTextField txtDistance = new JTextField();
   private JLabel lblQuadSegs = new JLabel();
   private JTextField txtQuadrantSegs = new JTextField();
+  
   private JLabel lblCapStyle = new JLabel();
   private JComboBox cbCapStyle = new JComboBox();
+  private JLabel lblEndCapFactor = new JLabel();
+  private JTextField txtEndCapFactor = new JTextField();
+  
+  private JLabel lblStartCapStyle = new JLabel();
+  private JComboBox cbStartCapStyle = new JComboBox();
+  private JLabel lblStartCapFactor = new JLabel();
+  private JTextField txtStartCapFactor = new JTextField();
+  
   private JLabel lblJoinStyle = new JLabel();
   private JComboBox cbJoinStyle = new JComboBox();
   private JLabel lblMitreLimit = new JLabel();
   private JTextField txtMitreLimit = new JTextField();
 
-  private JComponent[] paramComp = { txtDistance, txtQuadrantSegs, cbCapStyle, cbJoinStyle, txtMitreLimit };
-  private JLabel[] paramLabel = { lblDistance, lblQuadSegs, lblCapStyle, lblJoinStyle, lblMitreLimit };
+  private JComponent[] paramComp = { txtDistance, txtQuadrantSegs, 
+      cbCapStyle, // txtEndCapFactor,
+      cbStartCapStyle, // txtStartCapFactor,
+      cbJoinStyle, txtMitreLimit };
+  private JLabel[] paramLabel = { lblDistance, lblQuadSegs, 
+      lblCapStyle, // lblEndCapFactor, 
+      lblStartCapStyle, // lblStartCapFactor,
+      lblJoinStyle, lblMitreLimit };
   
   private GeometryFunction currentFunc = null;
   private Stopwatch timer;
@@ -141,19 +152,14 @@ extends JPanel implements FunctionPanel
   }
   
   void uiInit() throws Exception {
-    this.setLayout(borderLayout1);
     
 //    geomFuncPanel.populate(JTSTestBuilder.getFunctionRegistry().getGeometryFunctions());
     geomFuncPanel.populate(JTSTestBuilder.getFunctionRegistry().getCategorizedGeometryFunctions());
-
-    panelParam.setLayout(gridLayout2);
-    gridLayout2.setRows(6);
-    gridLayout2.setColumns(2);
+    
     panelExec.setLayout(flowLayout);
     panelExecMeta.setLayout(flowLayout2);
-    panelExecParam.setLayout(borderLayout2);
+    panelExecParam.setLayout(new BorderLayout());
 
-    
     displayAAndBCheckBox.setSelected(true);
     displayAAndBCheckBox.setToolTipText("");
     displayAAndBCheckBox.setText("Display Input");
@@ -181,20 +187,28 @@ extends JPanel implements FunctionPanel
     lblQuadSegs.setText("Quadrant Segs");
     txtQuadrantSegs.setHorizontalAlignment(SwingConstants.RIGHT);
     
-    lblCapStyle.setText("Cap Style");
+    lblCapStyle.setText("End Cap");
     ComboBoxModel modelCapStyle = new DefaultComboBoxModel(capStyleItems);
     cbCapStyle.setModel(modelCapStyle);
+    lblEndCapFactor.setText("Factor");
+    txtEndCapFactor.setText("1");
     
-    lblJoinStyle.setText("Join Style");
+    lblStartCapStyle.setText("Start Cap");
+    ComboBoxModel modelStartCapStyle = new DefaultComboBoxModel(capStyleItems);
+    cbStartCapStyle.setModel(modelStartCapStyle);
+    lblStartCapFactor.setText("Factor");
+    txtStartCapFactor.setText("1");
+    
+    lblJoinStyle.setText("Join");
     ComboBoxModel modelJoinStyle = new DefaultComboBoxModel(joinStyleItems);
     cbJoinStyle.setModel(modelJoinStyle);
-
     lblMitreLimit.setText("Mitre Limit");
     txtMitreLimit.setHorizontalAlignment(SwingConstants.RIGHT);
+    txtMitreLimit.setMaximumSize(new Dimension(25, 2147483647));
+    txtMitreLimit.setMinimumSize(new Dimension(10, 17));
+    txtMitreLimit.setPreferredSize(new Dimension(10, 17));
 
     initLabels(paramLabel);
-    
-
 
     btnClearResult.setToolTipText("");
     btnClearResult.setMargin(new Insets(0, 10, 0, 10));
@@ -207,18 +221,48 @@ extends JPanel implements FunctionPanel
         }
       });
 
-    panelParam.add(lblFunction);
-    panelParam.add(lblFunctionName);
+    panelParam.setLayout(gridLayout2);
+    gridLayout2.setRows(2);
+    gridLayout2.setColumns(2);
     panelParam.add(lblDistance);
     panelParam.add(txtDistance);
     panelParam.add(lblQuadSegs);
     panelParam.add(txtQuadrantSegs);
-    panelParam.add(lblCapStyle);
-    panelParam.add(cbCapStyle);
-    panelParam.add(lblJoinStyle);
-    panelParam.add(cbJoinStyle);
-    panelParam.add(lblMitreLimit);
-    panelParam.add(txtMitreLimit);
+
+    JPanel panelBufParam = new JPanel();
+    GridLayout gridLayout3 = new GridLayout();
+    gridLayout3.setRows(3);
+    gridLayout3.setColumns(4);
+    panelBufParam.setLayout(gridLayout3);
+    
+    JLabel lblEmpty = new JLabel();
+    
+    panelBufParam.add(lblCapStyle);
+    panelBufParam.add(cbCapStyle);
+    //panelBufParam.add(lblEndCapFactor);
+    //panelBufParam.add(txtEndCapFactor);
+    panelBufParam.add(new JLabel());
+    panelBufParam.add(new JLabel());
+
+    panelBufParam.add(lblStartCapStyle);
+    panelBufParam.add(cbStartCapStyle);
+    //panelBufParam.add(lblStartCapFactor);
+    //panelBufParam.add(txtStartCapFactor);
+    panelBufParam.add(new JLabel());
+    panelBufParam.add(new JLabel());
+
+    
+    panelBufParam.add(lblJoinStyle);
+    panelBufParam.add(cbJoinStyle);
+    panelBufParam.add(lblMitreLimit);
+    panelBufParam.add(txtMitreLimit);
+   
+
+    JPanel panelFunParam = new JPanel();
+    panelFunParam.setLayout(new BorderLayout());
+    panelFunParam.add(lblFunctionName, BorderLayout.NORTH);
+    panelFunParam.add(panelParam, BorderLayout.CENTER);
+    panelFunParam.add(panelBufParam, BorderLayout.SOUTH);
 
     panelControl.setLayout(flowLayout1);
     panelControl.add(displayAAndBCheckBox, null);
@@ -289,9 +333,10 @@ extends JPanel implements FunctionPanel
     panelExecControl.add(panelExecMeta);
     panelExecControl.add(panelControl);
     
-    panelExecParam.add(panelParam, BorderLayout.CENTER);
+    panelExecParam.add(panelFunParam, BorderLayout.CENTER);
     panelExecParam.add(panelExecControl, BorderLayout.SOUTH);
     
+    this.setLayout(new BorderLayout());
     this.add(geomFuncPanel, BorderLayout.CENTER);
     this.add(panelExecParam, BorderLayout.SOUTH);
 
@@ -480,8 +525,9 @@ extends JPanel implements FunctionPanel
     case 0: return valOrDefault(SwingUtil.value(txtDistance), PARAM_DEFAULT[0]);
     case 1: return valOrDefault(SwingUtil.value(txtQuadrantSegs), PARAM_DEFAULT[1]);
     case 2: return SwingUtil.value(cbCapStyle, capStyleValues);
-    case 3: return SwingUtil.value(cbJoinStyle, joinStyleValues);
-    case 4: return valOrDefault(SwingUtil.value(txtMitreLimit), PARAM_DEFAULT[4]);
+    case 3: return SwingUtil.value(cbStartCapStyle, capStyleValues);
+    case 4: return SwingUtil.value(cbJoinStyle, joinStyleValues);
+    case 5: return valOrDefault(SwingUtil.value(txtMitreLimit), PARAM_DEFAULT[4]);
     }
     return null;
   }
