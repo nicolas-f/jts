@@ -11,7 +11,10 @@
  */
 package org.locationtech.jts.operation.overlayng;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.locationtech.jts.algorithm.LineIntersector;
@@ -21,6 +24,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.noding.BasicSegmentString;
 import org.locationtech.jts.noding.NodedSegmentString;
 import org.locationtech.jts.noding.SegmentNode;
+import org.locationtech.jts.noding.SegmentNodeList;
 import org.locationtech.jts.noding.SegmentString;
 
 public class OverlayPolygonLine {
@@ -28,7 +32,7 @@ public class OverlayPolygonLine {
   private Geometry polyGeom;
   private Coordinate[] polyCoords;
   private LineIntersector li = new RobustLineIntersector();
-  private Map<SegmentNode, LineEdge> nodeMap = new HashMap<SegmentNode, LineEdge>();
+  private Map<SegmentNode, PolygonLineNode> nodeMap = new HashMap<SegmentNode, PolygonLineNode>();
 
   public OverlayPolygonLine(Geometry polyGeom) {
     this.polyGeom = polyGeom;
@@ -41,11 +45,25 @@ public class OverlayPolygonLine {
   }
 
   private Geometry compute(Geometry lineGeom) {
-    node(lineGeom);
+    NodedSegmentString lineSS = node(lineGeom);
+    
+    merge(nodeMap.values());
+    
+    SegmentNodeList segNodeList = lineSS.getNodeList();
+    List splitEdges = new ArrayList();
+    segNodeList.addSplitEdges(splitEdges);
+    
+    
     return null;
   }
 
-  private void node(Geometry lineGeom) {
+  private void merge(Collection<PolygonLineNode> nodes) {
+    for (PolygonLineNode node : nodes) {
+      node.merge();
+    }
+  }
+
+  private NodedSegmentString node(Geometry lineGeom) {
     Coordinate[] pts = lineGeom.getCoordinates();
     NodedSegmentString lineSS = new NodedSegmentString(pts, null);
     
@@ -56,7 +74,7 @@ public class OverlayPolygonLine {
         processIntersections(lineSS, i, polySS, j);
       }
     }
-    
+    return lineSS;
   }
 
   public void processIntersections(
@@ -74,20 +92,22 @@ public class OverlayPolygonLine {
     /**
      * Process single point intersections.
      */
-    // TODO: handle two-point (collinear) intersections 
     if (li.hasIntersection() && li.getIntersectionNum() == 1) {
         
         Coordinate intPt = li.getIntersection(0);
         
         SegmentNode segNode = ((NodedSegmentString) lineSS).addIntersectionNode(intPt, segIndex0);
         
-        LineEdge nodeEdge = nodeMap.get(segNode);
+        PolygonLineNode node = nodeMap.get(segNode);
         
-        if (nodeEdge == null) {
-          nodeEdge = createNode(lineSS, segIndex0, p00, p01, intPt);
-          nodeMap.put(segNode, nodeEdge);
+        if (node == null) {
+          node = createNode(lineSS, segIndex0, p00, p01, intPt);
+          nodeMap.put(segNode, node);
         }
+        node.addPolygonEdge(p10, false);
+        node.addPolygonEdge(p11, true);
     }
+    // TODO: handle two-point (collinear) intersections 
 
   }
 
@@ -101,11 +121,17 @@ public class OverlayPolygonLine {
    * @param intPt
    * @return
    */
-  private LineEdge createNode(SegmentString lineSS, int segIndex, 
-      Coordinate p0, Coordinate p1, Coordinate intPt) {
+  private PolygonLineNode createNode(SegmentString lineSS, int segIndex, 
+      Coordinate segp0, Coordinate segp1, Coordinate intPt) {
     
-    LineEdge e = null;
-    
+    PolygonLineNode node = new PolygonLineNode(intPt);
+    if (! intPt.equals2D(segp0)) {
+      node.addLineEdge(segp0, false);
+    }
+    if (! intPt.equals2D(segp1)) {
+      node.addLineEdge(segp1, true);
+    }
+    return node;
     
   }
 
