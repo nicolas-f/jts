@@ -5,37 +5,33 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.Quadrant;
 
-public class PolygonLineEdge implements Comparable {
+public class AreaLineEdge implements Comparable {
 
-  public static int DIM_UNKNOWN = 0;
-  public static int DIM_LINE = 1;
-  public static int DIM_BOUNDARY = 2;
-  public static int DIM_COLLAPSE = 3;
+  public static int INDEX_AREA = 0;
+  public static int INDEX_LINE = 1;
   
   private Coordinate orig;
   private Coordinate dest;
-  //private boolean isLine;
   private boolean isForward;
+  private OverlayLabel label;
   
-  private int dimLine = DIM_UNKNOWN;
-  private int dimArea = DIM_UNKNOWN;
-  private int locLeft = Location.NONE;
-  private int locRight = Location.NONE;
 
-  public PolygonLineEdge(Coordinate orig, Coordinate dest, boolean isLine, boolean isForward) {
+  public AreaLineEdge(Coordinate orig, Coordinate dest, boolean isLine, boolean isForward) {
     this.orig = orig;
     this.dest = dest;
     
-    if (isLine) 
-      this.dimLine = DIM_LINE;
     this.isForward = isForward;
-    if (isForward) {
-      locLeft = Location.EXTERIOR;
-      locRight = Location.EXTERIOR;
+    if (isLine) {
+      label = new OverlayLabel(INDEX_LINE);
     }
     else {
-      locLeft = Location.EXTERIOR;
-      locRight = Location.EXTERIOR;     
+      int locLeft = Location.EXTERIOR;
+      int locRight = Location.INTERIOR;
+      if (! isForward) {
+        locLeft = Location.EXTERIOR;
+        locRight = Location.EXTERIOR;     
+      }
+      label = new OverlayLabel(INDEX_AREA, locLeft, locRight, false);
     }
   }
 
@@ -44,16 +40,15 @@ public class PolygonLineEdge implements Comparable {
   }
 
   public boolean isLine() {
-    return dimLine == DIM_LINE;
+    return label.isLine(INDEX_LINE);
   }
 
   public boolean isAreaBoundary() {
-    return dimArea == DIM_BOUNDARY;
+    return label.isBoundary(INDEX_AREA);
   }
 
-  public int getAreaLocation(int right) {
-    // TODO Auto-generated method stub
-    return 0;
+  public int getAreaLocation(int position) {
+    return label.getLocation(INDEX_AREA, position, isForward);
   }
   
   /**
@@ -72,7 +67,7 @@ public class PolygonLineEdge implements Comparable {
   
   @Override
   public int compareTo(Object o) {
-    PolygonLineEdge e = (PolygonLineEdge) o;
+    AreaLineEdge e = (AreaLineEdge) o;
     int comp = compareAngularDirection(e);
     return comp;
   }
@@ -100,7 +95,7 @@ public class PolygonLineEdge implements Comparable {
    * can be used to determine the relative orientation of the vectors.
    * </ul>
    */
-  public int compareAngularDirection(PolygonLineEdge e)
+  public int compareAngularDirection(AreaLineEdge e)
   {
     double dx = directionX();
     double dy = directionY();

@@ -28,14 +28,14 @@ import org.locationtech.jts.noding.SegmentNode;
 import org.locationtech.jts.noding.SegmentNodeList;
 import org.locationtech.jts.noding.SegmentString;
 
-public class OverlayPolygonLine {
+public class OverlayAreaLine {
 
   private Geometry polyGeom;
   private Coordinate[] polyCoords;
   private LineIntersector li = new RobustLineIntersector();
-  private Map<SegmentNode, PolygonLineNode> nodeMap = new HashMap<SegmentNode, PolygonLineNode>();
+  private Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
 
-  public OverlayPolygonLine(Geometry polyGeom) {
+  public OverlayAreaLine(Geometry polyGeom) {
     this.polyGeom = polyGeom;
     this.polyCoords = polyGeom.getCoordinates();
   }
@@ -60,7 +60,7 @@ public class OverlayPolygonLine {
     while (it.hasNext()) {
       SegmentNode snEnd = (SegmentNode) it.next();
       SegmentString ss = nodedEdges.get(i);
-      PolygonLineNode lineNodeEnd = nodeMap.get(snEnd);
+      AreaLineNode lineNodeEnd = nodeMap.get(snEnd);
       
       boolean isInResult = lineNodeEnd.isInterior(false);
       
@@ -73,8 +73,8 @@ public class OverlayPolygonLine {
     return null;
   }
 
-  private void merge(Collection<PolygonLineNode> nodes) {
-    for (PolygonLineNode node : nodes) {
+  private void merge(Collection<AreaLineNode> nodes) {
+    for (AreaLineNode node : nodes) {
       node.merge();
     }
   }
@@ -114,7 +114,7 @@ public class OverlayPolygonLine {
         
         SegmentNode segNode = ((NodedSegmentString) lineSS).addIntersectionNode(intPt, segIndex0);
         
-        PolygonLineNode node = nodeMap.get(segNode);
+        AreaLineNode node = nodeMap.get(segNode);
         
         if (node == null) {
           node = createNode(lineSS, segIndex0, p00, p01, intPt);
@@ -137,10 +137,10 @@ public class OverlayPolygonLine {
    * @param intPt
    * @return
    */
-  private PolygonLineNode createNode(SegmentString lineSS, int segIndex, 
+  private AreaLineNode createNode(SegmentString lineSS, int segIndex, 
       Coordinate segp0, Coordinate segp1, Coordinate intPt) {
     
-    PolygonLineNode node = new PolygonLineNode(intPt);
+    AreaLineNode node = new AreaLineNode(intPt);
     if (! intPt.equals2D(segp0)) {
       node.addLineEdge(segp0, false);
     }

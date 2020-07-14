@@ -6,21 +6,21 @@ import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Position;
 
-public class PolygonLineNode {
+public class AreaLineNode {
 
   private Coordinate orig;
-  private List<PolygonLineEdge> edges = new ArrayList<PolygonLineEdge>();
+  private List<AreaLineEdge> edges = new ArrayList<AreaLineEdge>();
 
-  public PolygonLineNode(Coordinate orig) {
+  public AreaLineNode(Coordinate orig) {
     this.orig = orig;
   }
 
   public void addLineEdge(Coordinate dest, boolean isForward) {
-    edges.add(new PolygonLineEdge(orig, dest, true, isForward));
+    edges.add(new AreaLineEdge(orig, dest, true, isForward));
   }
 
   public void addPolygonEdge(Coordinate dest, boolean isForward) {
-    edges.add(new PolygonLineEdge(orig, dest, false, isForward));
+    edges.add(new AreaLineEdge(orig, dest, false, isForward));
   }
 
   public void merge() {
@@ -33,7 +33,7 @@ public class PolygonLineNode {
     //--- Find area edge
     int currIndex = findAreaBoundaryIndex();
     // Assert lineIndex >= 0
-    PolygonLineEdge currEdge = edges.get(currIndex);
+    AreaLineEdge currEdge = edges.get(currIndex);
     int currLoc = currEdge.getAreaLocation(Position.RIGHT);
   }
   
@@ -49,7 +49,7 @@ public class PolygonLineNode {
     //--- Find directed line edge
     int lineIndex = findLineIndex(isForward);
     // Assert lineIndex >= 0
-    PolygonLineEdge lineEdge = edges.get(lineIndex);
+    AreaLineEdge lineEdge = edges.get(lineIndex);
     
 
     int iedge = next(lineIndex);
@@ -79,7 +79,7 @@ public class PolygonLineNode {
 
   private int findLineIndex(boolean isForward) {
     for (int i = 0; i < edges.size(); i++) {
-      PolygonLineEdge edge = edges.get(i);
+      AreaLineEdge edge = edges.get(i);
       if (edge.isLine(isForward))
         return i;
     }
@@ -88,7 +88,7 @@ public class PolygonLineNode {
 
   private int findAreaBoundaryIndex() {
     for (int i = 0; i < edges.size(); i++) {
-      PolygonLineEdge edge = edges.get(i);
+      AreaLineEdge edge = edges.get(i);
       if (edge.isAreaBoundary())
         return i;
     }
