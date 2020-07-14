@@ -14,6 +14,7 @@ package org.locationtech.jts.operation.overlayng;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -50,9 +51,24 @@ public class OverlayPolygonLine {
     merge(nodeMap.values());
     
     SegmentNodeList segNodeList = lineSS.getNodeList();
-    List splitEdges = new ArrayList();
-    segNodeList.addSplitEdges(splitEdges);
+    List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
+    segNodeList.addSplitEdges(nodedEdges);
     
+    Iterator it = segNodeList.iterator();
+    SegmentNode snStart = (SegmentNode) it.next();
+    int i = 1;
+    while (it.hasNext()) {
+      SegmentNode snEnd = (SegmentNode) it.next();
+      SegmentString ss = nodedEdges.get(i);
+      PolygonLineNode lineNodeEnd = nodeMap.get(snEnd);
+      
+      boolean isInResult = lineNodeEnd.isInterior(false);
+      
+      
+      snStart = snEnd;
+    }
+
+
     
     return null;
   }
