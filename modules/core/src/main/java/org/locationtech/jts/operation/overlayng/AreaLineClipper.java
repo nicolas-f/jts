@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Martin Davis.
+ * Copyright (c) 2020 Martin Davis.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -22,22 +22,38 @@ import org.locationtech.jts.algorithm.LineIntersector;
 import org.locationtech.jts.algorithm.RobustLineIntersector;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.noding.BasicSegmentString;
 import org.locationtech.jts.noding.NodedSegmentString;
 import org.locationtech.jts.noding.SegmentNode;
 import org.locationtech.jts.noding.SegmentNodeList;
 import org.locationtech.jts.noding.SegmentString;
 
-public class OverlayAreaLine {
+/**
+ * Clips a linear geometry to an area geometry in a performant way.
+ * Does not maintain full overlay semantics in order to provide faster operation.
+ * 
+ * @author mdavis
+ *
+ */
+public class AreaLineClipper {
 
+  public static Geometry clip(Geometry area, Geometry line) {
+    AreaLineClipper clipper = new AreaLineClipper(area);
+    return clipper.getResult(line);
+  }
+  
   private Geometry polyGeom;
   private Coordinate[] polyCoords;
   private LineIntersector li = new RobustLineIntersector();
   private Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
+  private GeometryFactory geomFactory;
 
-  public OverlayAreaLine(Geometry polyGeom) {
+  public AreaLineClipper(Geometry polyGeom) {
     this.polyGeom = polyGeom;
     this.polyCoords = polyGeom.getCoordinates();
+    this.geomFactory = polyGeom.getFactory();
   }
   
   public Geometry getResult(Geometry lineGeom) {
@@ -54,23 +70,31 @@ public class OverlayAreaLine {
     List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
     segNodeList.addSplitEdges(nodedEdges);
     
+    List<LineString> resultLines = new ArrayList<LineString>();
     Iterator it = segNodeList.iterator();
     SegmentNode snStart = (SegmentNode) it.next();
     int i = 1;
     while (it.hasNext()) {
-      SegmentNode snEnd = (SegmentNode) it.next();
       SegmentString ss = nodedEdges.get(i);
+      SegmentNode snEnd = (SegmentNode) it.next();
       AreaLineNode lineNodeEnd = nodeMap.get(snEnd);
       
       boolean isInResult = lineNodeEnd.isInterior(false);
-      
+      if (isInResult) {
+        resultLines.add(createLine(ss));
+      }
       
       snStart = snEnd;
     }
 
 
     
-    return null;
+    return geomFactory.buildGeometry(resultLines);
+  }
+
+  private LineString createLine(SegmentString ss) {
+    Coordinate[] pts = ss.getCoordinates();
+    return geomFactory.createLineString(pts);
   }
 
   private void merge(Collection<AreaLineNode> nodes) {
@@ -150,6 +174,8 @@ public class OverlayAreaLine {
     return node;
     
   }
+
+
 
   
   
