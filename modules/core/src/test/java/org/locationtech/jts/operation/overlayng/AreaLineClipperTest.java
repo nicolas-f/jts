@@ -18,7 +18,7 @@ public class AreaLineClipperTest extends GeometryTestCase {
     checkClip(
         "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
         "LINESTRING (15 15, 25 15)",
-        "LINESTRING (15 15, 20 10)");
+        "LINESTRING (15 15, 20 15)");
   }
 
   private void checkClip(String wktArea, String wktLine, String wktExpected) {

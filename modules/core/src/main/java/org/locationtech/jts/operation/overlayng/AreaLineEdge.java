@@ -15,6 +15,7 @@ import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.Quadrant;
+import org.locationtech.jts.io.WKTWriter;
 
 public class AreaLineEdge implements Comparable {
 
@@ -38,13 +39,22 @@ public class AreaLineEdge implements Comparable {
       int locLeft = Location.EXTERIOR;
       int locRight = Location.INTERIOR;
       if (! isForward) {
-        locLeft = Location.EXTERIOR;
+        locLeft = Location.INTERIOR;
         locRight = Location.EXTERIOR;     
       }
       label = new OverlayLabel(INDEX_AREA, locLeft, locRight, false);
     }
   }
 
+  public OverlayLabel getLabel() {
+    return label;
+  }
+  
+
+  public Coordinate getCoordinate() {
+    return orig;
+  }
+  
   public boolean isLine(boolean isForward) {
     return isLine() && isForward == this.isForward;
   }
@@ -57,10 +67,21 @@ public class AreaLineEdge implements Comparable {
     return label.isBoundary(INDEX_AREA);
   }
 
-  public int getAreaLocation(int position) {
-    return label.getLocation(INDEX_AREA, position, isForward);
+  public boolean isInterior() {
+    // does line lie on boundary of area?
+    if (label.isBoundary(INDEX_AREA))
+      return true;
+    return Location.INTERIOR == label.getLineLocation(INDEX_AREA);
   }
   
+  public int getAreaLocation(int position) {
+    // labels for area edges are always represented in the forward direction
+    return label.getLocation(INDEX_AREA, position, true);
+  }
+  
+  public void setAreaLocation(int loc) {
+    label.setLocationLine(INDEX_AREA, loc);
+  }
   /**
    * The X component of the direction vector.
    * 
@@ -134,6 +155,18 @@ public class AreaLineEdge implements Comparable {
     return Orientation.index(e.orig, dir2, dir1);
   }
 
+  public int getLocation(int geomIndex, int position) {
+    return label.getLocation(geomIndex, position, isForward);
+  }
+
+  public String toString() {
+
+    return "ALE( "+ WKTWriter.format(orig)
+        + " .. " + WKTWriter.format(dest)
+        + " ) " 
+        + label.toString(true) 
+        ;
+  }
 
 
 }

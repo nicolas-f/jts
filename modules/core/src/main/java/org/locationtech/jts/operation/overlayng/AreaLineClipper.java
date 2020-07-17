@@ -63,8 +63,8 @@ public class AreaLineClipper {
 
   private Geometry compute(Geometry lineGeom) {
     NodedSegmentString lineSS = node(lineGeom);
-    
-    merge(nodeMap.values());
+    Collection<AreaLineNode> nodes = nodeMap.values();
+    mergeAndLabel(nodes);
     
     SegmentNodeList segNodeList = lineSS.getNodeList();
     List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
@@ -73,18 +73,29 @@ public class AreaLineClipper {
     List<LineString> resultLines = new ArrayList<LineString>();
     Iterator it = segNodeList.iterator();
     SegmentNode snStart = (SegmentNode) it.next();
-    int i = 1;
+    int i = 0;
     while (it.hasNext()) {
-      SegmentString ss = nodedEdges.get(i);
       SegmentNode snEnd = (SegmentNode) it.next();
-      AreaLineNode lineNodeEnd = nodeMap.get(snEnd);
+      SegmentString ss = nodedEdges.get(i);
       
-      boolean isInResult = lineNodeEnd.isInterior(false);
+      AreaLineNode lineNodeStart = nodeMap.get(snStart);
+      AreaLineNode lineNodeEnd = nodeMap.get(snEnd);
+      AreaLineNode topoNode = lineNodeEnd;
+      boolean isForward = false;
+      if (topoNode == null) {
+        topoNode = lineNodeStart;
+        isForward = true;
+      }
+      
+      //TODO: check that location from start and end nodes is the same
+        
+      boolean isInResult = topoNode.isInterior(isForward);
       if (isInResult) {
         resultLines.add(createLine(ss));
       }
       
       snStart = snEnd;
+      i++;
     }
 
 
@@ -92,17 +103,18 @@ public class AreaLineClipper {
     return geomFactory.buildGeometry(resultLines);
   }
 
+
   private LineString createLine(SegmentString ss) {
     Coordinate[] pts = ss.getCoordinates();
     return geomFactory.createLineString(pts);
   }
 
-  private void merge(Collection<AreaLineNode> nodes) {
+  private void mergeAndLabel(Collection<AreaLineNode> nodes) {
     for (AreaLineNode node : nodes) {
-      node.merge();
+      node.mergeAndLabel();
     }
   }
-
+  
   private NodedSegmentString node(Geometry lineGeom) {
     Coordinate[] pts = lineGeom.getCoordinates();
     NodedSegmentString lineSS = new NodedSegmentString(pts, null);

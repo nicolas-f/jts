@@ -15,7 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.Position;
+import org.locationtech.jts.geom.TopologyException;
+import org.locationtech.jts.util.Assert;
+import org.locationtech.jts.util.Debug;
 
 public class AreaLineNode {
 
@@ -34,12 +38,15 @@ public class AreaLineNode {
     edges.add(new AreaLineEdge(orig, dest, false, isForward));
   }
 
-  public void merge() {
-    edges.sort(null);
-    // TODO: merge coincident edges
-    propagateAreaLabels();
+  public int degree() {
+    return edges.size();
+  }
+ 
+  public AreaLineEdge getEdge(int i) {
+    return edges.get(i);
   }
 
+  /*
   public void propagateAreaLabels() {
     //--- Find area edge
     int currIndex = findAreaBoundaryIndex();
@@ -47,7 +54,7 @@ public class AreaLineNode {
     AreaLineEdge currEdge = edges.get(currIndex);
     int currLoc = currEdge.getAreaLocation(Position.RIGHT);
   }
-  
+  */
 
 
   /**
@@ -61,23 +68,7 @@ public class AreaLineNode {
     int lineIndex = findLineIndex(isForward);
     // Assert lineIndex >= 0
     AreaLineEdge lineEdge = edges.get(lineIndex);
-    
-
-    int iedge = next(lineIndex);
-    // TODO: check if edge is coincident with line edge ==> INTERIOR
-    
-    /*
-     * Search CCW for a significant (non-collapsed) polygon edge
-     * The interior condition is indicated by the R side of that edge 
-     */
-    while ( iedge != lineIndex ) {
-      // TODO: handle collapses
-      // TODO: handle  
-      
-      
-      iedge = next(iedge);
-    }
-    return true;
+    return lineEdge.isInterior();
   }
 
   private int next(int index) {
@@ -104,7 +95,102 @@ public class AreaLineNode {
         return i;
     }
     return -1;
-
   }
 
+  public void mergeAndLabel() {
+    edges.sort(null);
+    // TODO: merge coincident edges
+    propagateAreaLocations();
+  }
+  
+  /**
+   * Scans around a node CCW, propagating the side labels
+   * for a given area geometry to all edges (and their sym)
+   * with unknown locations for that geometry.
+   * @param e2 
+   * 
+   * @param geomIndex the geometry to propagate locations for
+   */
+  public void propagateAreaLocations() {
+    /**
+     * This handles dangling edges created by overlap limiting
+     */
+    if (degree() == 1) return;
+    //int geomIndex = AreaLineEdge.INDEX_AREA;
+    
+    int edgeIndex = findPropagationStartEdge();
+     
+    // no boundary edge found, so nothing to propagate
+    if ( edgeIndex < 0 )
+      return;
+    AreaLineEdge eStart = getEdge(edgeIndex);
+    
+    // initialize currLoc to location of L side
+    int currLoc = eStart.getAreaLocation(Position.LEFT);
+    edgeIndex = next(edgeIndex);
+    AreaLineEdge e = getEdge(edgeIndex);
+
+    Debug.println("\npropagateSideLabels " + " : " + eStart);
+    Debug.print("BEFORE: " + this);
+    
+    do {
+      OverlayLabel label = e.getLabel();
+      if ( ! label.isBoundary(AreaLineEdge.INDEX_AREA) ) {
+      /**
+       * If this is not a Boundary edge for this input area, 
+       * its location is now known relative to this input area
+       */
+        e.setAreaLocation(currLoc);
+      }
+      else {
+        Assert.isTrue(label.hasSides(AreaLineEdge.INDEX_AREA));
+        /**
+         *  This is a boundary edge for the input area geom.
+         *  Update the current location from its labels.
+         *  Also check for topological consistency.
+         */
+        int locRight = e.getAreaLocation(Position.RIGHT);
+        if (locRight != currLoc) {
+          /*
+          Debug.println("side location conflict: index= " + geomIndex + " R loc " 
+        + Location.toLocationSymbol(locRight) + " <>  curr loc " + Location.toLocationSymbol(currLoc) 
+        + " for " + e);
+        //*/
+          throw new TopologyException("side location conflict", e.getCoordinate());
+        }
+        int locLeft = e.getAreaLocation( Position.LEFT);
+        if (locLeft == Location.NONE) {
+          Assert.shouldNeverReachHere("found single null side at " + e);
+        }
+        currLoc = locLeft;
+      }
+      edgeIndex = next(edgeIndex);
+      e = getEdge(edgeIndex);
+    } while (e != eStart);
+    Debug.print("AFTER: " + this);
+  }
+
+  /**
+   * Finds the index for a boundary edge for the area, if one exists.
+   * 
+   * @return a boundary edge index, or -1 if no boundary edge exists
+   */
+  private int findPropagationStartEdge() {
+    for (int i = 0; i < edges.size(); i++) {
+      OverlayLabel label = getEdge(i).getLabel();
+      if (label.isBoundary(AreaLineEdge.INDEX_AREA)) {
+        Assert.isTrue(label.hasSides(AreaLineEdge.INDEX_AREA));
+        return i;
+      }
+    }
+    return -1;
+  }
+  
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (AreaLineEdge e : edges) {
+      sb.append(e + "\n");
+    }
+    return sb.toString();
+  }
 }
