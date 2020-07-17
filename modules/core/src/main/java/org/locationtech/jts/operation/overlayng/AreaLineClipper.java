@@ -32,7 +32,12 @@ import org.locationtech.jts.noding.SegmentString;
 
 /**
  * Clips a linear geometry to an area geometry in a performant way.
- * Does not maintain full overlay semantics in order to provide faster operation.
+ * In order to provide faster performance,  
+ * some of the full overlay output semantics are not provided:
+ * <ul>
+ * <li>Output lines are not merged
+ * <li>Output lines may contain coincident linework
+ * </ul>
  * 
  * @author mdavis
  *
@@ -47,7 +52,6 @@ public class AreaLineClipper {
   private Geometry polyGeom;
   private Coordinate[] polyCoords;
   private LineIntersector li = new RobustLineIntersector();
-  private Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
   private GeometryFactory geomFactory;
 
   public AreaLineClipper(Geometry polyGeom) {
@@ -62,10 +66,17 @@ public class AreaLineClipper {
   }
 
   private Geometry compute(Geometry lineGeom) {
-    NodedSegmentString lineSS = node(lineGeom);
+    Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
+
+    NodedSegmentString lineSS = node(lineGeom, nodeMap);
     Collection<AreaLineNode> nodes = nodeMap.values();
     mergeAndLabel(nodes);
     
+    List<LineString> resultLines = computeResult(lineSS, nodeMap);
+    return buildResult(resultLines);
+  }
+
+  private List<LineString> computeResult(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap) {
     SegmentNodeList segNodeList = lineSS.getNodeList();
     List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
     segNodeList.addSplitEdges(nodedEdges);
@@ -87,7 +98,7 @@ public class AreaLineClipper {
         isForward = true;
       }
       
-      //TODO: check that location from start and end nodes is the same
+      //TODO: check that start and end nodes give identical result tests (if both are available)
         
       boolean isInResult = topoNode.isInterior(isForward);
       if (isInResult) {
@@ -97,12 +108,12 @@ public class AreaLineClipper {
       snStart = snEnd;
       i++;
     }
-
-
-    
-    return geomFactory.buildGeometry(resultLines);
+    return resultLines;
   }
 
+  private Geometry buildResult(List<LineString> resultLines) {
+    return geomFactory.buildGeometry(resultLines);
+  }
 
   private LineString createLine(SegmentString ss) {
     Coordinate[] pts = ss.getCoordinates();
@@ -115,7 +126,7 @@ public class AreaLineClipper {
     }
   }
   
-  private NodedSegmentString node(Geometry lineGeom) {
+  private NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
     Coordinate[] pts = lineGeom.getCoordinates();
     NodedSegmentString lineSS = new NodedSegmentString(pts, null);
     
@@ -123,7 +134,7 @@ public class AreaLineClipper {
     
     for (int i = 0; i < lineSS.size() - 1; i++ ) {
       for (int j = 0; j < polySS.size() - 1; j++) {
-        processIntersections(lineSS, i, polySS, j);
+        processIntersections(lineSS, i, polySS, j, nodeMap);
       }
     }
     return lineSS;
@@ -131,7 +142,7 @@ public class AreaLineClipper {
 
   public void processIntersections(
       SegmentString lineSS,  int segIndex0,
-      SegmentString polySS,  int segIndex1
+      SegmentString polySS,  int segIndex1, Map<SegmentNode, AreaLineNode> nodeMap
       ) {
     Coordinate p00 = lineSS.getCoordinates()[segIndex0];
     Coordinate p01 = lineSS.getCoordinates()[segIndex0 + 1];
@@ -146,18 +157,25 @@ public class AreaLineClipper {
      */
     if (li.hasIntersection() && li.getIntersectionNum() == 1) {
         
-        Coordinate intPt = li.getIntersection(0);
+      Coordinate intPt = li.getIntersection(0);
         
-        SegmentNode segNode = ((NodedSegmentString) lineSS).addIntersectionNode(intPt, segIndex0);
+      SegmentNode segNode = ((NodedSegmentString) lineSS).addIntersectionNode(intPt, segIndex0);
+
+      AreaLineNode node = nodeMap.get(segNode); 
+      if (node == null) {
+        node = createNode(lineSS, segIndex0, p00, p01, intPt);
+        nodeMap.put(segNode, node);
+      }
         
-        AreaLineNode node = nodeMap.get(segNode);
-        
-        if (node == null) {
-          node = createNode(lineSS, segIndex0, p00, p01, intPt);
-          nodeMap.put(segNode, node);
-        }
-        node.addPolygonEdge(p10, false);
-        node.addPolygonEdge(p11, true);
+      /**
+       * Don't add endpoint intersections at that node
+       */
+      if (! intPt.equals2D(p10)) {
+        node.addEdgePolygon(p10, false);
+      }
+      if (! intPt.equals2D(p11)) {
+        node.addEdgePolygon(p11, true);
+      }
     }
     // TODO: handle two-point (collinear) intersections 
 
@@ -173,15 +191,15 @@ public class AreaLineClipper {
    * @param intPt
    * @return
    */
-  private AreaLineNode createNode(SegmentString lineSS, int segIndex, 
+  private AreaLineNode createNode(SegmentString lineSS, int lineSegIndex, 
       Coordinate segp0, Coordinate segp1, Coordinate intPt) {
     
     AreaLineNode node = new AreaLineNode(intPt);
     if (! intPt.equals2D(segp0)) {
-      node.addLineEdge(segp0, false);
+      node.addEdgeLine(segp0, false);
     }
     if (! intPt.equals2D(segp1)) {
-      node.addLineEdge(segp1, true);
+      node.addEdgeLine(segp1, true);
     }
     return node;
     

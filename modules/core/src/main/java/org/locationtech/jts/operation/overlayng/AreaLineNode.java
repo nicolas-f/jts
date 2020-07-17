@@ -30,11 +30,11 @@ public class AreaLineNode {
     this.orig = orig;
   }
 
-  public void addLineEdge(Coordinate dest, boolean isForward) {
+  public void addEdgeLine(Coordinate dest, boolean isForward) {
     edges.add(new AreaLineEdge(orig, dest, true, isForward));
   }
 
-  public void addPolygonEdge(Coordinate dest, boolean isForward) {
+  public void addEdgePolygon(Coordinate dest, boolean isForward) {
     edges.add(new AreaLineEdge(orig, dest, false, isForward));
   }
 
@@ -46,21 +46,12 @@ public class AreaLineNode {
     return edges.get(i);
   }
 
-  /*
-  public void propagateAreaLabels() {
-    //--- Find area edge
-    int currIndex = findAreaBoundaryIndex();
-    // Assert lineIndex >= 0
-    AreaLineEdge currEdge = edges.get(currIndex);
-    int currLoc = currEdge.getAreaLocation(Position.RIGHT);
-  }
-  */
-
-
   /**
    * Determines whether the line edge starting/ending
    * at this node lies in the interior of the polygon.
-   * @param isForward
+   * 
+   * @param isForward true if the forward direction line edge is to be checked, falso for 
+   * the reverse direction edge 
    * @return true if the directed line edge is in the polygon interior
    */
   public boolean isInterior(boolean isForward) {
@@ -88,35 +79,18 @@ public class AreaLineNode {
     return -1;
   }
 
-  private int findAreaBoundaryIndex() {
-    for (int i = 0; i < edges.size(); i++) {
-      AreaLineEdge edge = edges.get(i);
-      if (edge.isAreaBoundary())
-        return i;
-    }
-    return -1;
-  }
-
   public void mergeAndLabel() {
     edges.sort(null);
-    // TODO: merge coincident edges
+    // TODO: merge coincident Area edges
     propagateAreaLocations();
   }
   
   /**
-   * Scans around a node CCW, propagating the side labels
-   * for a given area geometry to all edges (and their sym)
-   * with unknown locations for that geometry.
-   * @param e2 
-   * 
-   * @param geomIndex the geometry to propagate locations for
+   * Scans around node CCW, propagating the side labels
+   * for the Area geometry to all non-boundary edges.
    */
   public void propagateAreaLocations() {
-    /**
-     * This handles dangling edges created by overlap limiting
-     */
     if (degree() == 1) return;
-    //int geomIndex = AreaLineEdge.INDEX_AREA;
     
     int edgeIndex = findPropagationStartEdge();
      
@@ -130,8 +104,8 @@ public class AreaLineNode {
     edgeIndex = next(edgeIndex);
     AreaLineEdge e = getEdge(edgeIndex);
 
-    Debug.println("\npropagateSideLabels " + " : " + eStart);
-    Debug.print("BEFORE: " + this);
+    //Debug.println("\npropagateSideLabels " + " : " + eStart);
+    //Debug.print("BEFORE: " + this);
     
     do {
       OverlayLabel label = e.getLabel();
@@ -167,7 +141,7 @@ public class AreaLineNode {
       edgeIndex = next(edgeIndex);
       e = getEdge(edgeIndex);
     } while (e != eStart);
-    Debug.print("AFTER: " + this);
+    //Debug.print("AFTER: " + this);
   }
 
   /**
