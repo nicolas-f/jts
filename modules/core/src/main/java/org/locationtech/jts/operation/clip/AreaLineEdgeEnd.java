@@ -9,15 +9,16 @@
  *
  * http://www.eclipse.org/org/documents/edl-v10.php.
  */
-package org.locationtech.jts.operation.overlayng;
+package org.locationtech.jts.operation.clip;
 
 import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.Position;
 import org.locationtech.jts.geom.Quadrant;
 import org.locationtech.jts.io.WKTWriter;
 
-public class AreaLineEdge implements Comparable {
+public class AreaLineEdgeEnd implements Comparable {
 
   public static int INDEX_AREA = 0;
   public static int INDEX_LINE = 1;
@@ -25,63 +26,71 @@ public class AreaLineEdge implements Comparable {
   private Coordinate orig;
   private Coordinate dest;
   private boolean isForward;
-  private OverlayLabel label;
   
-  public AreaLineEdge(Coordinate orig, Coordinate dest, boolean isLine, boolean isForward) {
+  private boolean isLine = false;
+  private boolean isArea = false;
+  private boolean isCollapse = false;
+  private int locLeft = Location.NONE;
+  private int locRight = Location.NONE;
+  private int locLine = Location.NONE;
+  
+  
+  public AreaLineEdgeEnd(Coordinate orig, Coordinate dest, boolean isLine, boolean isForward) {
     this.orig = orig;
     this.dest = dest;
-    
+    this.isLine = isLine;
     this.isForward = isForward;
-    if (isLine) {
-      label = new OverlayLabel(INDEX_LINE);
-    }
-    else {
-      int locLeft = Location.EXTERIOR;
-      int locRight = Location.INTERIOR;
+    
+    if (! isLine) {
+      isArea = true;
+      locLeft = Location.EXTERIOR;
+      locRight = Location.INTERIOR;
       if (! isForward) {
         locLeft = Location.INTERIOR;
         locRight = Location.EXTERIOR;     
       }
-      label = new OverlayLabel(INDEX_AREA, locLeft, locRight, false);
     }
   }
-
-  public OverlayLabel getLabel() {
-    return label;
-  }
-  
 
   public Coordinate getCoordinate() {
     return orig;
   }
   
   public boolean isLine(boolean isForward) {
-    return isLine() && isForward == this.isForward;
+    return isLine && isForward == this.isForward;
   }
 
   public boolean isLine() {
-    return label.isLine(INDEX_LINE);
+    return isLine;
   }
 
-  public boolean isAreaBoundary() {
-    return label.isBoundary(INDEX_AREA);
+  public boolean isBoundary() {
+    return isArea && ! isCollapse;
+  }
+
+  public boolean hasSides() {
+    return locLeft != Location.NONE && locRight != Location.NONE;
   }
 
   public boolean isInterior() {
     // does line lie on boundary of area?
-    if (label.isBoundary(INDEX_AREA))
+    if (isBoundary())
       return true;
-    return Location.INTERIOR == label.getLineLocation(INDEX_AREA);
+    return Location.INTERIOR == locLine;
   }
   
   public int getAreaLocation(int position) {
-    // labels for area edges are always represented in the forward direction
-    return label.getLocation(INDEX_AREA, position, true);
+    // locations for area edges are always represented in the forward direction
+    if (position == Position.LEFT) {
+      return locLeft;
+    }
+    return locRight;
   }
   
   public void setAreaLocation(int loc) {
-    label.setLocationLine(INDEX_AREA, loc);
+    locLine = loc;
   }
+  
   /**
    * The X component of the direction vector.
    * 
@@ -98,7 +107,7 @@ public class AreaLineEdge implements Comparable {
   
   @Override
   public int compareTo(Object o) {
-    AreaLineEdge e = (AreaLineEdge) o;
+    AreaLineEdgeEnd e = (AreaLineEdgeEnd) o;
     int comp = compareAngularDirection(e);
     return comp;
   }
@@ -126,7 +135,7 @@ public class AreaLineEdge implements Comparable {
    * can be used to determine the relative orientation of the vectors.
    * </ul>
    */
-  public int compareAngularDirection(AreaLineEdge e)
+  public int compareAngularDirection(AreaLineEdgeEnd e)
   {
     double dx = directionX();
     double dy = directionY();
@@ -155,18 +164,31 @@ public class AreaLineEdge implements Comparable {
     return Orientation.index(e.orig, dir2, dir1);
   }
 
-  public int getLocation(int geomIndex, int position) {
-    return label.getLocation(geomIndex, position, isForward);
-  }
-
   public String toString() {
 
     return "ALE( "+ WKTWriter.format(orig)
         + " .. " + WKTWriter.format(dest)
         + " ) " 
-        + label.toString(true) 
+        + toStringLabel() 
         ;
   }
 
+  public String toStringLabel()
+  {
+    StringBuilder buf = new StringBuilder();
+    buf.append("A:");
+    if (isArea) {
+      buf.append( Location.toLocationSymbol( locLeft ));
+      buf.append( Location.toLocationSymbol( locRight ));
+    }
+    else {
+      buf.append("-");
+    }
+    if (isLine) {
+      buf.append("/L:");
+      buf.append( Location.toLocationSymbol( locLine ) );
+    }
+    return buf.toString();
+  }
 
 }

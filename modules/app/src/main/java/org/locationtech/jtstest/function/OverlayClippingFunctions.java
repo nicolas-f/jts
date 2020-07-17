@@ -12,7 +12,7 @@
 package org.locationtech.jtstest.function;
 
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.operation.overlayng.AreaLineClipper;
+import org.locationtech.jts.operation.clip.AreaLineClipper;
 
 public class OverlayClippingFunctions {
 

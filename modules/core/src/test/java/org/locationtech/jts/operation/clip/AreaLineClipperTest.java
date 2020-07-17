@@ -1,6 +1,7 @@
-package org.locationtech.jts.operation.overlayng;
+package org.locationtech.jts.operation.clip;
 
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.operation.clip.AreaLineClipper;
 
 import junit.textui.TestRunner;
 import test.jts.GeometryTestCase;

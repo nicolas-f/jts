@@ -9,7 +9,7 @@
  *
  * http://www.eclipse.org/org/documents/edl-v10.php.
  */
-package org.locationtech.jts.operation.overlayng;
+package org.locationtech.jts.operation.clip;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,25 +24,25 @@ import org.locationtech.jts.util.Debug;
 public class AreaLineNode {
 
   private Coordinate orig;
-  private List<AreaLineEdge> edges = new ArrayList<AreaLineEdge>();
+  private List<AreaLineEdgeEnd> edges = new ArrayList<AreaLineEdgeEnd>();
 
   public AreaLineNode(Coordinate orig) {
     this.orig = orig;
   }
 
   public void addEdgeLine(Coordinate dest, boolean isForward) {
-    edges.add(new AreaLineEdge(orig, dest, true, isForward));
+    edges.add(new AreaLineEdgeEnd(orig, dest, true, isForward));
   }
 
   public void addEdgePolygon(Coordinate dest, boolean isForward) {
-    edges.add(new AreaLineEdge(orig, dest, false, isForward));
+    edges.add(new AreaLineEdgeEnd(orig, dest, false, isForward));
   }
 
   public int degree() {
     return edges.size();
   }
  
-  public AreaLineEdge getEdge(int i) {
+  public AreaLineEdgeEnd getEdge(int i) {
     return edges.get(i);
   }
 
@@ -58,7 +58,7 @@ public class AreaLineNode {
     //--- Find directed line edge
     int lineIndex = findLineIndex(isForward);
     // Assert lineIndex >= 0
-    AreaLineEdge lineEdge = edges.get(lineIndex);
+    AreaLineEdgeEnd lineEdge = edges.get(lineIndex);
     return lineEdge.isInterior();
   }
 
@@ -72,7 +72,7 @@ public class AreaLineNode {
 
   private int findLineIndex(boolean isForward) {
     for (int i = 0; i < edges.size(); i++) {
-      AreaLineEdge edge = edges.get(i);
+      AreaLineEdgeEnd edge = edges.get(i);
       if (edge.isLine(isForward))
         return i;
     }
@@ -97,27 +97,26 @@ public class AreaLineNode {
     // no boundary edge found, so nothing to propagate
     if ( edgeIndex < 0 )
       return;
-    AreaLineEdge eStart = getEdge(edgeIndex);
+    AreaLineEdgeEnd eStart = getEdge(edgeIndex);
     
     // initialize currLoc to location of L side
     int currLoc = eStart.getAreaLocation(Position.LEFT);
     edgeIndex = next(edgeIndex);
-    AreaLineEdge e = getEdge(edgeIndex);
+    AreaLineEdgeEnd e = getEdge(edgeIndex);
 
     //Debug.println("\npropagateSideLabels " + " : " + eStart);
     //Debug.print("BEFORE: " + this);
     
     do {
-      OverlayLabel label = e.getLabel();
-      if ( ! label.isBoundary(AreaLineEdge.INDEX_AREA) ) {
-      /**
-       * If this is not a Boundary edge for this input area, 
-       * its location is now known relative to this input area
-       */
+      if ( ! e.isBoundary() ) {
+        /**
+         * If this is not a Boundary edge for this input area, 
+         * its location is now known relative to this input area
+         */
         e.setAreaLocation(currLoc);
       }
       else {
-        Assert.isTrue(label.hasSides(AreaLineEdge.INDEX_AREA));
+        Assert.isTrue(e.hasSides());
         /**
          *  This is a boundary edge for the input area geom.
          *  Update the current location from its labels.
@@ -151,9 +150,10 @@ public class AreaLineNode {
    */
   private int findPropagationStartEdge() {
     for (int i = 0; i < edges.size(); i++) {
-      OverlayLabel label = getEdge(i).getLabel();
-      if (label.isBoundary(AreaLineEdge.INDEX_AREA)) {
-        Assert.isTrue(label.hasSides(AreaLineEdge.INDEX_AREA));
+      AreaLineEdgeEnd e = getEdge(i);
+      //OverlayLabel label = getEdge(i).getLabel();
+      if (e.isBoundary()) {
+        Assert.isTrue(e.hasSides());
         return i;
       }
     }
@@ -162,7 +162,7 @@ public class AreaLineNode {
   
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (AreaLineEdge e : edges) {
+    for (AreaLineEdgeEnd e : edges) {
       sb.append(e + "\n");
     }
     return sb.toString();
