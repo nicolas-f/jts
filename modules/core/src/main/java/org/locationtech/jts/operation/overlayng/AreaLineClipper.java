@@ -19,11 +19,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.locationtech.jts.algorithm.LineIntersector;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.algorithm.RobustLineIntersector;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.noding.BasicSegmentString;
 import org.locationtech.jts.noding.NodedSegmentString;
 import org.locationtech.jts.noding.SegmentNode;
@@ -50,13 +54,11 @@ public class AreaLineClipper {
   }
   
   private Geometry polyGeom;
-  private Coordinate[] polyCoords;
-  private LineIntersector li = new RobustLineIntersector();
   private GeometryFactory geomFactory;
 
   public AreaLineClipper(Geometry polyGeom) {
     this.polyGeom = polyGeom;
-    this.polyCoords = polyGeom.getCoordinates();
+    //this.polyCoords = polyGeom.getCoordinates();
     this.geomFactory = polyGeom.getFactory();
   }
   
@@ -74,6 +76,12 @@ public class AreaLineClipper {
     
     List<LineString> resultLines = computeResult(lineSS, nodeMap);
     return buildResult(resultLines);
+  }
+
+  
+  private NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
+    AreaLineNoder noder = new AreaLineNoder(polyGeom);
+    return noder.node(lineGeom, nodeMap); 
   }
 
   private List<LineString> computeResult(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap) {
@@ -126,24 +134,80 @@ public class AreaLineClipper {
     }
   }
   
-  private NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
+
+  
+}
+
+class AreaLineNoder {
+  private LineIntersector li = new RobustLineIntersector();
+
+  List<SegmentString> areaEdges = new ArrayList<SegmentString>();
+  
+  public AreaLineNoder(Geometry geom) {
+    add(geom);
+  }
+  
+  private void add(Geometry geom) {
+    for (int i = 0; i < geom.getNumGeometries(); i++) {
+      addPolygon((Polygon) geom.getGeometryN(i));
+    }
+  }
+  
+  private void addPolygon(Polygon poly) {
+    addPolygonRing(poly.getExteriorRing(), false);
+    for (int i = 0; i < poly.getNumInteriorRing(); i++) {
+      addPolygonRing(poly.getInteriorRingN(i), true);
+    }
+  }
+  
+  private void addPolygonRing(LinearRing ring, boolean isHole) {
+    /**
+     * Compute the orientation of the ring, to
+     * allow assigning side interior/exterior labels correctly.
+     * JTS canonical orientation is that shells are CW, holes are CCW.
+     * 
+     * It is important to compute orientation on the original ring,
+     * since topology collapse can make the orientation computation give the wrong answer.
+     */
+    boolean isCCW = Orientation.isCCW( ring.getCoordinateSequence() );
+    /**
+     * Compute whether ring is in canonical orientation or not.
+     * Canonical orientation for the overlay process is
+     * Shells : CW, Holes: CCW
+     */
+    boolean isInteriorRight = true;
+    if (! isHole)
+      isInteriorRight = ! isCCW;
+    else {
+      isInteriorRight = isCCW;
+    }
+    Coordinate[] pts = ring.getCoordinates();
+    SegmentString ringSS = new BasicSegmentString(pts, isInteriorRight);
+    areaEdges.add(ringSS);
+  }
+
+  public NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
     Coordinate[] pts = lineGeom.getCoordinates();
     NodedSegmentString lineSS = new NodedSegmentString(pts, null);
     
-    SegmentString polySS = new BasicSegmentString(polyCoords, null);
-    
+
     for (int i = 0; i < lineSS.size() - 1; i++ ) {
-      for (int j = 0; j < polySS.size() - 1; j++) {
-        processIntersections(lineSS, i, polySS, j, nodeMap);
+      for (SegmentString ss : areaEdges) {
+        for (int j = 0; j < ss.size() - 1; j++) {
+          processIntersections(lineSS, i, ss, j, nodeMap);
+        }
       }
     }
     return lineSS;
   }
 
+  
   public void processIntersections(
       SegmentString lineSS,  int segIndex0,
       SegmentString polySS,  int segIndex1, Map<SegmentNode, AreaLineNode> nodeMap
       ) {
+    boolean isInteriorRight = (boolean) polySS.getData();
+    
     Coordinate p00 = lineSS.getCoordinates()[segIndex0];
     Coordinate p01 = lineSS.getCoordinates()[segIndex0 + 1];
     Coordinate p10 = polySS.getCoordinates()[segIndex1];
@@ -171,10 +235,10 @@ public class AreaLineClipper {
        * Don't add endpoint intersections at that node
        */
       if (! intPt.equals2D(p10)) {
-        node.addEdgePolygon(p10, false);
+        node.addEdgePolygon(p10, ! isInteriorRight);
       }
       if (! intPt.equals2D(p11)) {
-        node.addEdgePolygon(p11, true);
+        node.addEdgePolygon(p11, isInteriorRight);
       }
     }
     // TODO: handle two-point (collinear) intersections 
@@ -202,11 +266,6 @@ public class AreaLineClipper {
       node.addEdgeLine(segp1, true);
     }
     return node;
-    
   }
-
-
-
-  
   
 }
