@@ -49,11 +49,13 @@ public class AreaLineClipper {
   
   private Geometry polyGeom;
   private GeometryFactory geomFactory;
+  private AreaLineNoder noder;
 
   public AreaLineClipper(Geometry polyGeom) {
     this.polyGeom = polyGeom;
     //this.polyCoords = polyGeom.getCoordinates();
     this.geomFactory = polyGeom.getFactory();
+    noder = new AreaLineNoder(polyGeom);
   }
   
   public Geometry getResult(Geometry lineGeom) {
@@ -64,18 +66,12 @@ public class AreaLineClipper {
   private Geometry compute(Geometry lineGeom) {
     Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
 
-    NodedSegmentString lineSS = node(lineGeom, nodeMap);
+    NodedSegmentString lineSS = noder.node(lineGeom, nodeMap);
     Collection<AreaLineNode> nodes = nodeMap.values();
     mergeAndLabel(nodes);
     
     List<LineString> resultLines = computeResult(lineSS, nodeMap);
     return buildResult(resultLines);
-  }
-
-  
-  private NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
-    AreaLineNoder noder = new AreaLineNoder(polyGeom);
-    return noder.node(lineGeom, nodeMap); 
   }
 
   private List<LineString> computeResult(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap) {

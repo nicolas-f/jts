@@ -23,17 +23,20 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.noding.BasicSegmentString;
+import org.locationtech.jts.noding.MCIndexSegmentSetMutualIntersector;
 import org.locationtech.jts.noding.NodedSegmentString;
+import org.locationtech.jts.noding.SegmentIntersector;
 import org.locationtech.jts.noding.SegmentNode;
 import org.locationtech.jts.noding.SegmentString;
 
 class AreaLineNoder {
-  private LineIntersector li = new RobustLineIntersector();
 
-  List<SegmentString> areaEdges = new ArrayList<SegmentString>();
+  private List<SegmentString> areaEdges = new ArrayList<SegmentString>();
+  private MCIndexSegmentSetMutualIntersector intersector;
   
   public AreaLineNoder(Geometry geom) {
     add(geom);
+    intersector = new MCIndexSegmentSetMutualIntersector(areaEdges);
   }
   
   private void add(Geometry geom) {
@@ -75,25 +78,53 @@ class AreaLineNoder {
     areaEdges.add(ringSS);
   }
 
-  public NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
+  public NodedSegmentString nodeSLOW(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
     Coordinate[] pts = lineGeom.getCoordinates();
     NodedSegmentString lineSS = new NodedSegmentString(pts, null);
-    
+    AreaLineSegmentIntersector si = new AreaLineSegmentIntersector(nodeMap);
 
     for (int i = 0; i < lineSS.size() - 1; i++ ) {
       for (SegmentString ss : areaEdges) {
         for (int j = 0; j < ss.size() - 1; j++) {
-          processIntersections(lineSS, i, ss, j, nodeMap);
+          si.processIntersections(lineSS, i, ss, j);
         }
       }
     }
     return lineSS;
   }
+  
+  public NodedSegmentString node(Geometry lineGeom, Map<SegmentNode, AreaLineNode> nodeMap) {
+    Coordinate[] pts = lineGeom.getCoordinates();
+    NodedSegmentString lineSS = new NodedSegmentString(pts, null);
+    List<NodedSegmentString> lineList = new ArrayList<NodedSegmentString>();
+    lineList.add(lineSS);
+    
+    AreaLineSegmentIntersector segInt = new AreaLineSegmentIntersector(nodeMap);
 
+    intersector.process(lineList, segInt);
+    return lineSS;
+  }
+
+  
+}
+
+class AreaLineSegmentIntersector implements SegmentIntersector {
+  
+  private LineIntersector li = new RobustLineIntersector();
+  private Map<SegmentNode, AreaLineNode> nodeMap;
+
+  public AreaLineSegmentIntersector(Map<SegmentNode, AreaLineNode> nodeMap) {
+    this.nodeMap = nodeMap;
+  }
+
+  @Override
+  public boolean isDone() {
+    return false;
+  }
   
   public void processIntersections(
       SegmentString lineSS,  int segIndex0,
-      SegmentString polySS,  int segIndex1, Map<SegmentNode, AreaLineNode> nodeMap
+      SegmentString polySS,  int segIndex1
       ) {
     boolean isInteriorRight = (boolean) polySS.getData();
     
@@ -156,5 +187,7 @@ class AreaLineNoder {
     }
     return node;
   }
+
+
   
 }
