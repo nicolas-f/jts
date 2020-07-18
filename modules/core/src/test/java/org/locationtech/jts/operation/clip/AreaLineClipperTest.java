@@ -15,11 +15,32 @@ public class AreaLineClipperTest extends GeometryTestCase {
     super(name);
   }
   
-  public void testBoxLine( ) {
+  public void testBoxCrossingLine( ) {
     checkClip(
       "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
       "LINESTRING (15 15, 25 15)",
       "LINESTRING (15 15, 20 15)");
+  }
+
+  public void testBoxCoversLine( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (15 15, 19 19)",
+      "LINESTRING (15 15, 19 19)");
+  }
+
+  public void testBoxCoversLinewithFlatSpike( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (15 15, 16 16, 16 15, 16 16, 19 19)",
+      "LINESTRING (15 15, 16 16, 16 15, 16 16, 19 19)");
+  }
+
+  public void testBoxCoversLinewithFlatSpikeAndRepeatedPoint( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (15 15, 16 16, 16 15, 16 16, 16 16, 19 19)",
+      "LINESTRING (15 15, 16 16, 16 15, 16 16, 16 16, 19 19)");
   }
 
   public void testULine( ) {
@@ -57,6 +78,13 @@ public class AreaLineClipperTest extends GeometryTestCase {
       "MULTILINESTRING ((10 15, 12 15), (18 15, 20 15), (30 15, 32 15), (38 15, 40 15), (50 15, 52 15), (55 15, 60 15))");
   }
 
+  public void testBoxCrossingMultiLine( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "MULTILINESTRING ((5 15, 15 15), (15 25, 15 15), (25 15, 15 15), (15 5, 15 15))",
+      "MULTILINESTRING ((10 15, 15 15), (15 20, 15 15), (20 15, 15 15), (15 10, 15 15))");
+  }
+  
   private void checkClip(String wktArea, String wktLine, String wktExpected) {
     Geometry area = read(wktArea);
     Geometry line = read(wktLine);

@@ -59,27 +59,56 @@ public class AreaLineClipper {
   }
   
   public Geometry getResult(Geometry lineGeom) {
-    // TODO: remove repeated points from line
-    return compute(lineGeom);
+    if (lineGeom.getEnvelopeInternal().disjoint(polyGeom.getEnvelopeInternal())) {
+      return createEmptyLine();
+    }
+    // TODO: Handle MultiLineString
+    // TODO: remove repeated points from line?
+    
+    List<LineString> resultLines = new ArrayList<LineString>();
+    for (int i = 0; i < lineGeom.getNumGeometries(); i++) {
+      addResultLines(lineGeom.getGeometryN(i), resultLines);
+    }
+    return buildResult(resultLines);
   }
 
-  private Geometry compute(Geometry lineGeom) {
+  private Geometry createEmptyLine() {
+    return geomFactory.createEmpty(1);
+  }
+
+  private void addResultLines(Geometry lineGeom, List<LineString> resultLines) {
     Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
 
     NodedSegmentString lineSS = noder.node(lineGeom, nodeMap);
     Collection<AreaLineNode> nodes = nodeMap.values();
     mergeAndLabel(nodes);
     
-    List<LineString> resultLines = computeResult(lineSS, nodeMap);
-    return buildResult(resultLines);
+    addResultLines(lineSS, nodeMap, resultLines);
   }
 
-  private List<LineString> computeResult(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap) {
+  private List<LineString> addResultLines(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap, List<LineString> resultLines) {
     SegmentNodeList segNodeList = lineSS.getNodeList();
+    
+    /**
+     * If no nodes found just return original line
+     */
+    if (nodeMap.size() == 0) {
+      // TODO: check whether outside
+      // Line must be fully inside area
+      resultLines.add(createLine(lineSS));
+      return resultLines;
+    }
+    
     List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
     segNodeList.addSplitEdges(nodedEdges);
     
-    List<LineString> resultLines = new ArrayList<LineString>();
+    /*
+    if (nodedEdges.size() == 1) {
+      resultLines.add(createLine(nodedEdges.get(0)));
+      return resultLines;
+    }
+    */
+    
     Iterator it = segNodeList.iterator();
     SegmentNode snStart = (SegmentNode) it.next();
     int i = 0;

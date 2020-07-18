@@ -19,4 +19,16 @@ public class OverlayClippingFunctions {
   public static Geometry areaLineIntersection(Geometry area, Geometry line) {
     return AreaLineClipper.clip(area, line);
   }
+  
+  private static Geometry cacheKey = null;
+  private static AreaLineClipper cacheClipper = null;
+  
+  public static Geometry areaLineIntersectionCached(Geometry area, Geometry line) {
+    if (area != cacheKey) {
+      cacheKey = area;
+      cacheClipper = new AreaLineClipper(area);
+    }
+    return cacheClipper.getResult(line);
+  }
+
 }
