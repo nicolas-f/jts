@@ -31,9 +31,11 @@ import org.locationtech.jts.noding.SegmentString;
 /**
  * Clips a linear geometry to an area geometry in a performant way.
  * In order to provide faster performance,  
- * some of the full overlay output semantics are not provided:
+ * some overlay output semantics are not provided:
  * <ul>
- * <li>Output lines are not merged
+ * <li>The output line set is not fully noded
+ * <li>Output lines may contain self-intersections and repeated points
+ * <li>Output lines are not merged if they are contiguous
  * <li>Output lines may contain coincident linework
  * </ul>
  * 
@@ -42,9 +44,9 @@ import org.locationtech.jts.noding.SegmentString;
  */
 public class AreaLineClipper {
 
-  public static Geometry clip(Geometry area, Geometry line) {
+  public static Geometry clip(Geometry area, Geometry linear) {
     AreaLineClipper clipper = new AreaLineClipper(area);
-    return clipper.getResult(line);
+    return clipper.getResult(linear);
   }
   
   private Geometry polyGeom;
@@ -58,16 +60,16 @@ public class AreaLineClipper {
     noder = new AreaLineNoder(polyGeom);
   }
   
-  public Geometry getResult(Geometry lineGeom) {
-    if (lineGeom.getEnvelopeInternal().disjoint(polyGeom.getEnvelopeInternal())) {
+  // TODO: provide intersection and difference operations
+  
+  public Geometry getResult(Geometry linearGeom) {
+    if (polyGeom.getEnvelopeInternal().disjoint(linearGeom.getEnvelopeInternal())) {
       return createEmptyLine();
     }
-    // TODO: Handle MultiLineString
-    // TODO: remove repeated points from line?
     
     List<LineString> resultLines = new ArrayList<LineString>();
-    for (int i = 0; i < lineGeom.getNumGeometries(); i++) {
-      addResultLines(lineGeom.getGeometryN(i), resultLines);
+    for (int i = 0; i < linearGeom.getNumGeometries(); i++) {
+      addResultLines(linearGeom.getGeometryN(i), resultLines);
     }
     return buildResult(resultLines);
   }
@@ -77,37 +79,42 @@ public class AreaLineClipper {
   }
 
   private void addResultLines(Geometry lineGeom, List<LineString> resultLines) {
-    Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
+    //--- skip if not in intersection
+    if (polyGeom.getEnvelopeInternal().disjoint(lineGeom.getEnvelopeInternal())) {
+      return;
+    }
 
+    // TODO: remove repeated points from line?
+
+    Map<SegmentNode, AreaLineNode> nodeMap = new HashMap<SegmentNode, AreaLineNode>();
     NodedSegmentString lineSS = noder.node(lineGeom, nodeMap);
     Collection<AreaLineNode> nodes = nodeMap.values();
-    mergeAndLabel(nodes);
-    
-    addResultLines(lineSS, nodeMap, resultLines);
-  }
-
-  private List<LineString> addResultLines(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap, List<LineString> resultLines) {
-    SegmentNodeList segNodeList = lineSS.getNodeList();
     
     /**
-     * If no nodes found just return original line
+     * If no nodes found, line is covered or disjoint.
      */
     if (nodeMap.size() == 0) {
-      // TODO: check whether outside
-      // Line must be fully inside area
-      resultLines.add(createLine(lineSS));
-      return resultLines;
+      if (intersects(lineGeom)) {
+        // If Line is covered by area return original line
+        resultLines.add(createLine(lineSS));
+      }
+      return;
     }
+ 
+    mergeAndLabel(nodes);
+    extractResultLines(lineSS, nodeMap, resultLines);
+  }
+
+  private boolean intersects(Geometry lineGeom) {
+    // TODO: check if disjoint via PIP
+    return true;
+  }
+
+  private void extractResultLines(NodedSegmentString lineSS, Map<SegmentNode, AreaLineNode> nodeMap, List<LineString> resultLines) {
+    SegmentNodeList segNodeList = lineSS.getNodeList();
     
     List<SegmentString> nodedEdges = new ArrayList<SegmentString>();
     segNodeList.addSplitEdges(nodedEdges);
-    
-    /*
-    if (nodedEdges.size() == 1) {
-      resultLines.add(createLine(nodedEdges.get(0)));
-      return resultLines;
-    }
-    */
     
     Iterator it = segNodeList.iterator();
     SegmentNode snStart = (SegmentNode) it.next();
@@ -129,13 +136,12 @@ public class AreaLineClipper {
         
       boolean isInResult = topoNode.isInterior(isForward);
       if (isInResult) {
-        resultLines.add(createLine(ss));
+        resultLines.add( createLine(ss) );
       }
       
       snStart = snEnd;
       i++;
     }
-    return resultLines;
   }
 
   private Geometry buildResult(List<LineString> resultLines) {
@@ -152,7 +158,5 @@ public class AreaLineClipper {
       node.mergeAndLabel();
     }
   }
-  
-
-  
+ 
 }
