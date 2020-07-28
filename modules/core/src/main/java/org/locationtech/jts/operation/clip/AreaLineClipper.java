@@ -22,7 +22,6 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.noding.NodedSegmentString;
 import org.locationtech.jts.noding.SegmentNode;
 import org.locationtech.jts.noding.SegmentNodeList;
@@ -39,7 +38,7 @@ import org.locationtech.jts.noding.SegmentString;
  * <li>Output lines may contain coincident linework
  * </ul>
  * 
- * @author mdavis
+ * @author Martin Davis
  *
  */
 public class AreaLineClipper {
@@ -74,10 +73,6 @@ public class AreaLineClipper {
     return buildResult(resultLines);
   }
 
-  private Geometry createEmptyLine() {
-    return geomFactory.createEmpty(1);
-  }
-
   private void addResultLines(Geometry lineGeom, List<LineString> resultLines) {
     //--- skip if not in intersection
     if (polyGeom.getEnvelopeInternal().disjoint(lineGeom.getEnvelopeInternal())) {
@@ -105,6 +100,12 @@ public class AreaLineClipper {
     extractResultLines(lineSS, nodeMap, resultLines);
   }
 
+  private void mergeAndLabel(Collection<AreaLineNode> nodes) {
+    for (AreaLineNode node : nodes) {
+      node.mergeAndLabel();
+    }
+  }
+  
   private boolean intersects(Geometry lineGeom) {
     // TODO: check if disjoint via PIP
     return true;
@@ -152,11 +153,11 @@ public class AreaLineClipper {
     Coordinate[] pts = ss.getCoordinates();
     return geomFactory.createLineString(pts);
   }
-
-  private void mergeAndLabel(Collection<AreaLineNode> nodes) {
-    for (AreaLineNode node : nodes) {
-      node.mergeAndLabel();
-    }
+  
+  private Geometry createEmptyLine() {
+    return geomFactory.createEmpty(1);
   }
+
+
  
 }

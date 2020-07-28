@@ -50,13 +50,48 @@ public class AreaLineClipperTest extends GeometryTestCase {
       "MULTILINESTRING ((10 15, 12 15), (18 15, 20 15))");
   }
 
-  public void testVertexCrossingDiagonalLine( ) {
+  public void testBoxVertexWithDiagonalLineEntering( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (5 5, 15 15)",
+      "LINESTRING (10 10, 15 15)");
+  }
+  
+  public void testBoxVertexWithDiagonalLineEnteringAtVertex( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (5 5, 10 10, 15 15)",
+      "LINESTRING (10 10, 15 15)");
+  }
+
+  public void testBoxVertexWithDiagonalLineCrossing( ) {
     checkClip(
       "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
       "LINESTRING (5 5, 25 25)",
       "LINESTRING (10 10, 20 20)");
   }
 
+  public void testBoxVertexWithDiagonalLineCrossingAtVertex( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (5 5, 20 20, 25 25)",
+      "LINESTRING (10 10, 20 20)");
+  }
+
+  public void testBoxVertexWithDiagonalLineCrossingAtVertices( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (5 5, 10 10, 20 20, 25 25)",
+      "LINESTRING (10 10, 20 20)");
+  }
+
+  public void testBoxTouchingInsideLineInside( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (12 14, 15 20, 18 14)",
+      "MULTILINESTRING ((12 14, 15 20), (15 20, 18 14))");
+  }
+  
   public void testBoxWith2HolesLineCrossesAll( ) {
     checkClip(
       "POLYGON ((10 40, 80 40, 80 10, 10 10, 10 40), (20 30, 40 30, 40 20, 20 20, 20 30), (50 30, 70 30, 70 20, 50 20, 50 30))",
@@ -84,6 +119,7 @@ public class AreaLineClipperTest extends GeometryTestCase {
       "MULTILINESTRING ((5 15, 15 15), (15 25, 15 15), (25 15, 15 15), (15 5, 15 15))",
       "MULTILINESTRING ((10 15, 15 15), (15 20, 15 15), (20 15, 15 15), (15 10, 15 15))");
   }
+  
   
   private void checkClip(String wktArea, String wktLine, String wktExpected) {
     Geometry area = read(wktArea);

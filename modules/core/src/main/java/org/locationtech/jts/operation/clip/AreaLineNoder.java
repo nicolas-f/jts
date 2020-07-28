@@ -128,37 +128,50 @@ class AreaLineSegmentIntersector implements SegmentIntersector {
       ) {
     boolean isInteriorRight = (boolean) polySS.getData();
     
-    Coordinate p00 = lineSS.getCoordinates()[segIndex0];
-    Coordinate p01 = lineSS.getCoordinates()[segIndex0 + 1];
-    Coordinate p10 = polySS.getCoordinates()[segIndex1];
-    Coordinate p11 = polySS.getCoordinates()[segIndex1 + 1];
+    Coordinate p0Line = lineSS.getCoordinates()[segIndex0];
+    Coordinate p1Line = lineSS.getCoordinates()[segIndex0 + 1];
+    Coordinate p0Poly = polySS.getCoordinates()[segIndex1];
+    Coordinate p1Poly = polySS.getCoordinates()[segIndex1 + 1];
 
-    li.computeIntersection(p00, p01, p10, p11);
+    li.computeIntersection(p0Line, p1Line, p0Poly, p1Poly);
 //if (li.hasIntersection() && li.isProper()) Debug.println(li);
 
     /**
      * Process single point intersections.
      */
     if (li.hasIntersection() && li.getIntersectionNum() == 1) {
-        
+
       Coordinate intPt = li.getIntersection(0);
         
       SegmentNode segNode = ((NodedSegmentString) lineSS).addIntersectionNode(intPt, segIndex0);
 
       AreaLineNode node = nodeMap.get(segNode); 
       if (node == null) {
-        node = createNode(lineSS, segIndex0, p00, p01, intPt);
+        node = new AreaLineNode(intPt);
         nodeMap.put(segNode, node);
       }
-        
-      /**
-       * Don't add endpoint intersections at that node
-       */
-      if (! intPt.equals2D(p10)) {
-        node.addEdgePolygon(p10, ! isInteriorRight);
+      boolean isDuplicatePolyVertex = intPt.equals2D(p1Poly);
+      if (! isDuplicatePolyVertex) {
+        addLineEdges(node, p0Line, p1Line, intPt);
       }
-      if (! intPt.equals2D(p11)) {
-        node.addEdgePolygon(p11, isInteriorRight);
+      /**
+       * If the intersection occurs at an interior line vertex,
+       * it will be processed twice, once for each adjacent line segment.
+       * This check ensures that the incident polygon edges are not
+       * duplicated.
+       */
+      boolean isDuplicateLineVertex = intPt.equals2D(p1Line) && segIndex0 < lineSS.size() - 1;
+      if (! isDuplicateLineVertex) {
+        /**
+         * Don't add zero-length polygon edges
+         * (i.e. where intersection is at an endpoint)
+         */
+        if (! intPt.equals2D(p0Poly)) {
+          node.addEdgePolygon(p0Poly, ! isInteriorRight);
+        }
+        if (! intPt.equals2D(p1Poly)) {
+          node.addEdgePolygon(p1Poly, isInteriorRight);
+        }
       }
     }
     // TODO: handle two-point (collinear) intersections 
@@ -166,26 +179,26 @@ class AreaLineSegmentIntersector implements SegmentIntersector {
   }
 
   /**
-   * Creates a node in the line edge graph.
-   * The node is created with both line edges originating at the node
-   * (except for end nodes, which have only one edge).
+   * Add the edges for an intersected line segment to
+   * the intersection node. 
    * 
-   * @param lineSS
-   * @param segIndex0
+   * @param node
+   * @param p0Line
+   * @param p1Line
    * @param intPt
-   * @return
    */
-  private static AreaLineNode createNode(SegmentString lineSS, int lineSegIndex, 
-      Coordinate segp0, Coordinate segp1, Coordinate intPt) {
-    
-    AreaLineNode node = new AreaLineNode(intPt);
-    if (! intPt.equals2D(segp0)) {
-      node.addEdgeLine(segp0, false);
+  private static void addLineEdges(AreaLineNode node, 
+      Coordinate p0Line, Coordinate p1Line, Coordinate intPt) {
+    /**
+     * Don't add zero-length polygon edges
+     * (which occur when intersection is at an endpoint)
+     */    
+    if (! intPt.equals2D(p0Line)) {
+      node.addEdgeLine(p0Line, false);
     }
-    if (! intPt.equals2D(segp1)) {
-      node.addEdgeLine(segp1, true);
+    if (! intPt.equals2D(p1Line)) {
+      node.addEdgeLine(p1Line, true);
     }
-    return node;
   }
 
 

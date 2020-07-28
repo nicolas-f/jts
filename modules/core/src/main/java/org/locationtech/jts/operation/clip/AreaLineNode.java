@@ -50,7 +50,7 @@ public class AreaLineNode {
    * Determines whether the line edge starting/ending
    * at this node lies in the interior of the polygon.
    * 
-   * @param isForward true if the forward direction line edge is to be checked, falso for 
+   * @param isForward true if the forward direction line edge is to be checked, false for 
    * the reverse direction edge 
    * @return true if the directed line edge is in the polygon interior
    */
