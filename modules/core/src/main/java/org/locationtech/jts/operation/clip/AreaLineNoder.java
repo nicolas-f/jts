@@ -150,18 +150,23 @@ class AreaLineSegmentIntersector implements SegmentIntersector {
         node = new AreaLineNode(intPt);
         nodeMap.put(segNode, node);
       }
-      boolean isDuplicatePolyVertex = intPt.equals2D(p1Poly);
-      if (! isDuplicatePolyVertex) {
+      
+      /**
+       * If the intersection occurs at a polygon segment endpoint 
+       * AND/OR an interior line segment endpoint,
+       * it will be processed twice (once for each incident segments).
+       * This would result in duplicated edges being added.
+       * To avoid this, only process these endpoints once.
+       */
+      boolean isPolyEndpoint = intPt.equals2D(p1Poly);
+      if (! isPolyEndpoint) {
         addLineEdges(node, p0Line, p1Line, intPt);
       }
-      /**
-       * If the intersection occurs at an interior line vertex,
-       * it will be processed twice, once for each adjacent line segment.
-       * This check ensures that the incident polygon edges are not
-       * duplicated.
-       */
-      boolean isDuplicateLineVertex = intPt.equals2D(p1Line) && segIndex0 < lineSS.size() - 1;
-      if (! isDuplicateLineVertex) {
+      
+      boolean isLineInteriorSegment = segIndex0 < lineSS.size() - 2;
+      boolean isLineEndpoint = intPt.equals2D(p1Line);
+      boolean isLineInteriorEndpoint = isLineEndpoint && isLineInteriorSegment;
+      if (! isLineInteriorEndpoint) {
         /**
          * Don't add zero-length polygon edges
          * (i.e. where intersection is at an endpoint)

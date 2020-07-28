@@ -22,11 +22,25 @@ public class AreaLineClipperTest extends GeometryTestCase {
       "LINESTRING (15 15, 20 15)");
   }
 
-  public void testBoxCoversLine( ) {
+  public void testBoxCoversProperLine( ) {
     checkClip(
       "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
       "LINESTRING (15 15, 19 19)",
       "LINESTRING (15 15, 19 19)");
+  }
+
+  public void testBoxCoversLineTouchingAtStart( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (10 15, 15 15)",
+      "LINESTRING (10 15, 15 15)");
+  }
+
+  public void testBoxCoversLineTouchingAtEnd( ) {
+    checkClip(
+      "POLYGON ((10 20, 20 20, 20 10, 10 10, 10 20))",
+      "LINESTRING (15 15, 15 20)",
+      "LINESTRING (15 15, 15 20)");
   }
 
   public void testBoxCoversLinewithFlatSpike( ) {
