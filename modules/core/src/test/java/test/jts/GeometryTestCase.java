@@ -155,7 +155,7 @@ public abstract class GeometryTestCase extends TestCase{
     checkEqual(toGeometryCollection(expected),toGeometryCollection(actual) );
   }
 
-  GeometryCollection toGeometryCollection(Collection geoms) {
+  protected GeometryCollection toGeometryCollection(Collection geoms) {
     return geomFactory.createGeometryCollection(GeometryFactory.toGeometryArray(geoms));
   }
   
