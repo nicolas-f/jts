@@ -73,35 +73,4 @@ public class OverlayAreaStarsPerfTest extends PerformanceTestCase
     
     return g;
   }
-  
-  public static Geometry grid(Geometry g, int nCells)
-  {
-    Envelope env = g.getEnvelopeInternal();
-    GeometryFactory geomFact = g.getFactory();
-    
-    int nCellsOnSideY = (int) Math.sqrt(nCells);
-    int nCellsOnSideX = nCells / nCellsOnSideY;
-    
-    // alternate: make square cells, with varying grid width/height
-    //double extent = env.minExtent();
-    //double nCellsOnSide = Math.max(nCellsOnSideY, nCellsOnSideX);
-    
-    double cellSizeX = env.getWidth() / nCellsOnSideX;
-    double cellSizeY = env.getHeight() / nCellsOnSideY;
-    
-    List geoms = new ArrayList(); 
-
-    for (int i = 0; i < nCellsOnSideX; i++) {
-      for (int j = 0; j < nCellsOnSideY; j++) {
-        double x = env.getMinX() + i * cellSizeX;
-        double y = env.getMinY() + j * cellSizeY;
-        double x2 = env.getMinX() + (i + 1) * cellSizeX;
-        double y2 = env.getMinY() + (j + 1) * cellSizeY;
-      
-        Envelope cellEnv = new Envelope(x, x2, y, y2);
-        geoms.add(geomFact.toGeometry(cellEnv));
-      }
-    }
-    return geomFact.buildGeometry(geoms);
-  }
 }
