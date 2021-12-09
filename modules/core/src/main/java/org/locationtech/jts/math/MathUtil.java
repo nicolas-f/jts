@@ -198,7 +198,7 @@ public class MathUtil
   }
   
   /**
-   * Generates a randomly-shuffled array of integers in [0..n-1].
+   * Generates a randomly-shuffled list of the integers from [0..n-1].
    * <p>
    * One use is to randomize points inserted into a {@link KDtree}.
    * 
