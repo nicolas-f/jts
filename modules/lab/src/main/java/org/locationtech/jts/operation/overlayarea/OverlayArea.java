@@ -85,6 +85,7 @@ public class OverlayArea {
   public OverlayArea(Geometry geom) {
     this.geom0 = geom;
     
+    //TODO: handle holes and multipolygons
     if (! (geom0 instanceof Polygon
         && ((Polygon) geom0).getNumInteriorRing() == 0))
       throw new IllegalArgumentException("Currently only Polygons with no holes supported");
@@ -100,7 +101,7 @@ public class OverlayArea {
   }
   
   public double intersectionArea(Geometry geom) {
-    //-- optimization - intersection area is 0 if geom does not interact with geom0
+    //-- intersection area is 0 if geom does not interact with geom0
     if (! interacts(geom)) return 0;
 
     PolygonAreaFilter filter = new PolygonAreaFilter();
