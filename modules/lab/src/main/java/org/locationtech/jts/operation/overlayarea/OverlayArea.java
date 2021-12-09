@@ -313,17 +313,14 @@ public class OverlayArea {
     CoordinateSequence seq = getVertices(geom);
     boolean isCW = ! Orientation.isCCW(seq);
     
-    List verts = vertexIndex.query(env);
-    for (Object node : verts) {
-      KdNode kdNode = (KdNode) node;
+    List<KdNode> verts = vertexIndex.query(env);
+    for (KdNode kdNode : verts) {
       int i = (Integer) kdNode.getData();
-      
       Coordinate v = seq.getCoordinate(i);
       // is this vertex in interior of intersection result?
       if (Location.INTERIOR == locator.locate(v)) {
         Coordinate vPrev = i == 0 ? seq.getCoordinate(seq.size()-2) : seq.getCoordinate(i-1);
         Coordinate vNext = seq.getCoordinate(i+1);
-        //Coordinate vNext = i < seq.size() - 1 ? seq.getCoordinate(i+1) : seq.getCoordinate(0);
         area += EdgeVector.area2Term(v, vPrev, ! isCW)
             + EdgeVector.area2Term(v, vNext, isCW);
       }
@@ -331,14 +328,13 @@ public class OverlayArea {
     return area;
   }
   
-  
-  private CoordinateSequence getVertices(Geometry geom) {
+  private static CoordinateSequence getVertices(Geometry geom) {
     Polygon poly = (Polygon) geom;
     CoordinateSequence seq = poly.getExteriorRing().getCoordinateSequence();
     return seq;
   }
   
-  private STRtree buildSegmentIndex(Geometry geom) {
+  private static STRtree buildSegmentIndex(Geometry geom) {
     Coordinate[] coords = geom.getCoordinates();
     
     boolean isCCW = Orientation.isCCW(coords);
@@ -356,7 +352,7 @@ public class OverlayArea {
     return index;
   }
 
-  private KdTree buildVertexIndex(Geometry geom) {
+  private static KdTree buildVertexIndex(Geometry geom) {
     Coordinate[] coords = geom.getCoordinates();
     KdTree index = new KdTree();
     //-- don't insert duplicate last vertex
@@ -368,17 +364,5 @@ public class OverlayArea {
     //System.out.println("Depth = " + index.depth() +  " size = " + index.size());
     return index;
   }
-  
-  /*
-  private KdTree buildVertexIndexUnbalanced(Geometry geom) {
-    Coordinate[] coords = geom.getCoordinates();
-    KdTree index = new KdTree();
-    //-- don't insert duplicate last vertex
-    for (int i = 0; i < coords.length - 1; i++) {
-      index.insert(coords[i], i);
-    }
-    return index;
-  }
-  */
 
 }
