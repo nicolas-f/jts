@@ -44,15 +44,12 @@ public class OverlayAreaStarsGridPerfTest extends PerformanceTestCase
 
   public void startRun(int size) throws IOException, ParseException
   {
-    iter = 0;
     geom = createSineStar(size, 0);
     grid = grid(geom, 100_00);
     
     System.out.printf("\n---  Running with Polygon size %d, grid # = %d -------------\n",
         geom.getNumPoints(), grid.getNumGeometries());
   }
- 
-  private int iter = 0;
   
   public void runIntersectionArea()
   {
@@ -66,7 +63,7 @@ public class OverlayAreaStarsGridPerfTest extends PerformanceTestCase
     System.out.println(">>> IntersectionArea = " + area);
   }
   
-  public void runOverlayArea()
+  public void runFullIntersection()
   {
     double area = 0.0;
     //System.out.println("Test 1 : Iter # " + iter++);

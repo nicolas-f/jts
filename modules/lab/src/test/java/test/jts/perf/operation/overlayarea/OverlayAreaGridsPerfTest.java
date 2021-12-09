@@ -47,16 +47,14 @@ public class OverlayAreaGridsPerfTest extends PerformanceTestCase
 
   public void startRun(int size) throws IOException, ParseException
   {
-    iter = 0;
-    geom = createSineStar(10_000, 0);
-    geom = (Geometry) IOUtil.readWKTFile("D:/proj/jts/testing/intersectionarea/dvg_nw.wkt").toArray()[0];
+    //geom = createSineStar(10_000, 0);
+    //geom = (Geometry) IOUtil.readWKTFile("D:/proj/jts/testing/intersectionarea/dvg_nw.wkt").toArray()[0];
+    geom = (Geometry) IOUtil.readWKTFile("/Users/mdavis/proj/jts/git/jts/modules/core/src/test/resources/testdata/africa.wkt").toArray()[0];
     grid = grid(geom, size);
     
     System.out.printf("\n---  Running with Polygon size %d, grid # = %d -------------\n",
         geom.getNumPoints(), grid.getNumGeometries());
   }
- 
-  private int iter = 0;
   
   public void runOverlayArea()
   {
@@ -66,11 +64,27 @@ public class OverlayAreaGridsPerfTest extends PerformanceTestCase
     for (int i = 0; i < grid.getNumGeometries(); i++) {
       Geometry cell = grid.getGeometryN(i);
       area += intArea.intersectionArea(cell);
+      //checkOrigArea(geom, cell);
     }
     System.out.println(">>> OverlayArea = " + area);
   }
   
-  public void xrunFullIntersection()
+  private void checkOrigArea(Geometry geom0, Geometry geom1) {
+    double intArea = OverlayArea.intersectionArea(geom0, geom1);
+    double origArea = geom0.intersection(geom1).getArea();
+    if (! isEqual(intArea, origArea, 0.1)) {
+      System.out.println("********************   Areas are different! OA = " 
+            + intArea + "  Orig = " + origArea);
+    }
+  }
+
+  private boolean isEqual(double v1, double v2, double tol) {
+    if (v1 == v2) return true;
+    double diff = Math.abs( (v1 - v2) / (v1 + v2));
+    return diff < tol;
+  }
+
+  public void runFullIntersection()
   {
     double area = 0.0;
     //System.out.println("Test 1 : Iter # " + iter++);

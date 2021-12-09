@@ -11,13 +11,8 @@
  */
 package test.jts.perf.operation.overlayarea;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.util.SineStarFactory;
 import org.locationtech.jts.operation.overlayarea.OverlayArea;
 
@@ -42,12 +37,9 @@ public class OverlayAreaStarsPerfTest extends PerformanceTestCase
   public void startRun(int size)
   {
     System.out.println("\n---  Running with size " + size + "  -----------");
-    iter = 0;
     star1 = createSineStar(size, 0);
     star2 = createSineStar(size, 10);
   }
-  
-  private int iter = 0;
   
   public void runOverlayArea()
   {

@@ -46,6 +46,14 @@ public class OverlayAreaFunctions {
     return result;
   }
   
+  public static Geometry intersectionAreaData(Geometry geom0, Geometry geom1) {
+    double area = intersectionArea(geom0, geom1);
+    if (area == 0.0) return null;
+    Geometry result = geom1.copy();
+    result.setUserData(area);
+    return result;
+  }
+  
   public static double intAreaOrig(Geometry geom0, Geometry geom1) {
     double intArea = geom0.intersection(geom1).getArea();
     return intArea;
@@ -62,6 +70,15 @@ public class OverlayAreaFunctions {
     return intAreaFullPrep(geom0, geomPrepCache, geom1);
   }
 
+  public static Geometry intAreaOrigData(Geometry geom0, Geometry geom1) {
+    double area = intAreaOrig(geom0, geom1);
+    if (area == 0.0) return null;
+    
+    Geometry result = geom1.copy();
+    result.setUserData(area);
+    return result;
+  }
+  
   public static Geometry intAreaOrigPrepData(Geometry geom0, Geometry geom1) {
     double area = intAreaOrigPrep(geom0, geom1);
     if (area == 0.0) return null;

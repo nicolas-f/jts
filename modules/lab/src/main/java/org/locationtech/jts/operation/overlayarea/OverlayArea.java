@@ -21,7 +21,6 @@ import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
 import org.locationtech.jts.algorithm.locate.PointOnGeometryLocator;
 import org.locationtech.jts.algorithm.locate.SimplePointInAreaLocator;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.CoordinateFilter;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -34,6 +33,7 @@ import org.locationtech.jts.index.ItemVisitor;
 import org.locationtech.jts.index.kdtree.KdNode;
 import org.locationtech.jts.index.kdtree.KdTree;
 import org.locationtech.jts.index.strtree.STRtree;
+import org.locationtech.jts.math.MathUtil;
 
 /**
  * Computes the area of the overlay of two polygons without forming
@@ -64,10 +64,16 @@ import org.locationtech.jts.index.strtree.STRtree;
 public class OverlayArea {
   
   public static double intersectionArea(Geometry geom0, Geometry geom1) {
+    if (! interacts(geom0, geom1))
+      return 0;
     OverlayArea area = new OverlayArea(geom0);
     return area.intersectionArea(geom1);
   }
   
+  private static boolean interacts(Geometry geom0, Geometry geom1) {
+    return geom0.getEnvelopeInternal().intersects(geom1.getEnvelopeInternal());
+  }
+
   private static LineIntersector li = new RobustLineIntersector();
   
   private Geometry geom0;
@@ -78,6 +84,11 @@ public class OverlayArea {
 
   public OverlayArea(Geometry geom) {
     this.geom0 = geom;
+    
+    if (! (geom0 instanceof Polygon
+        && ((Polygon) geom0).getNumInteriorRing() == 0))
+      throw new IllegalArgumentException("Currently only Polygons with no holes supported");
+    
     geomEnv0 = geom.getEnvelopeInternal();
     locator0 = new IndexedPointInAreaLocator(geom);
     indexSegs = buildSegmentIndex(geom);
@@ -89,6 +100,9 @@ public class OverlayArea {
   }
   
   public double intersectionArea(Geometry geom) {
+    //-- optimization - intersection area is 0 if geom does not interact with geom0
+    if (! interacts(geom)) return 0;
+
     PolygonAreaFilter filter = new PolygonAreaFilter();
     geom.apply(filter);
     return filter.area;
@@ -309,6 +323,7 @@ public class OverlayArea {
       if (Location.INTERIOR == locator.locate(v)) {
         Coordinate vPrev = i == 0 ? seq.getCoordinate(seq.size()-2) : seq.getCoordinate(i-1);
         Coordinate vNext = seq.getCoordinate(i+1);
+        //Coordinate vNext = i < seq.size() - 1 ? seq.getCoordinate(i+1) : seq.getCoordinate(0);
         area += EdgeVector.area2Term(v, vPrev, ! isCW)
             + EdgeVector.area2Term(v, vNext, isCW);
       }
@@ -344,11 +359,26 @@ public class OverlayArea {
   private KdTree buildVertexIndex(Geometry geom) {
     Coordinate[] coords = geom.getCoordinates();
     KdTree index = new KdTree();
+    //-- don't insert duplicate last vertex
+    int[] ints = MathUtil.shuffle(coords.length - 1);
+    //Arrays.sort(ints);
+    for (int i : ints) {
+      index.insert(coords[i], i);
+    }
+    //System.out.println("Depth = " + index.depth() +  " size = " + index.size());
+    return index;
+  }
+  
+  /*
+  private KdTree buildVertexIndexUnbalanced(Geometry geom) {
+    Coordinate[] coords = geom.getCoordinates();
+    KdTree index = new KdTree();
+    //-- don't insert duplicate last vertex
     for (int i = 0; i < coords.length - 1; i++) {
-      Coordinate p = coords[i];
-      index.insert(p, i);
+      index.insert(coords[i], i);
     }
     return index;
   }
+  */
 
 }
